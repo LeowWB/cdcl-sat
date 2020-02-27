@@ -2,12 +2,14 @@
 	implement cnf formula as array of clauses. implement clause as array of literals.
 """
 
+from io import read_input
+
 UNSAT = False
 SAT = True
 
 def main():
 	F = read_input()
-
+	print(F)
 
 def unitProp(F):
 	propList = [] # vars assigned thru inference
@@ -33,10 +35,6 @@ def dpll(F, decList, level):
 	if (dpll(land(F, l), decList, level) == SAT):
 		return SAT
 	return dpll(land(F, lnot(l)), decList, level)
-
-	
-def read_input():
-	pass
 
 def exists_unit_clause(F):
 	pass
