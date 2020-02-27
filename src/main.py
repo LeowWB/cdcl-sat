@@ -59,10 +59,14 @@ def resolve(l, F):
 	pass
 
 def contains_empty_clause(F):
-	pass
+	for clause in F:
+		if (len(clause) == 0):
+			return True
+	
+	return False
 
 def is_empty_cnf(F):
-	pass
+	return len(F) == 0
 
 def all_vars_assigned(F, decList):
 	pass
