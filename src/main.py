@@ -77,10 +77,15 @@ def select_prop_var(F):
 def select_literal(p, F):
 	pass
 
+# logical and
 def land(F, l):
 	pass
 
+# logical not
 def lnot(l):
-	pass
+	if (l[0] == "~"):
+		return l[1:]
+	else:
+		return "~" + l
 
 main()
