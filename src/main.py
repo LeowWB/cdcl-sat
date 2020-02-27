@@ -1,5 +1,9 @@
 """
 	implement cnf formula as array of clauses. implement clause as array of literals.
+
+	TODO
+	can probably combine exists_unit_clause with find_unit_clause and save the looping.
+	use profiler to see where time wasted
 """
 
 from io import read_input
@@ -37,10 +41,18 @@ def dpll(F, decList, level):
 	return dpll(land(F, lnot(l)), decList, level)
 
 def exists_unit_clause(F):
-	pass
+	for clause in F:
+		if (len(clause) == 1):
+			return True
+
+	return False
 
 def find_unit_clause(F):
-	pass
+	for clause in F:
+		if (len(clause) == 1):
+			return clause
+	
+	return None
 
 # note that l is a literal, not prop var.
 def resolve(l, F):
