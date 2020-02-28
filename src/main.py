@@ -31,17 +31,17 @@ def unitProp(F):
 def dpll(F, decList, level):
 	(propList, F) = unitProp(F)
 	if (contains_empty_clause(F)):
-		return UNSAT
+		return (UNSAT, None)
 	if (is_empty_cnf(F)):
-		return SAT
+		return (SAT, decList)
 	if (all_vars_assigned(F, decList)):
-		return SAT
+		return (SAT, decList)
 	decList[level] = propList
 	p = select_prop_var(F)
 	l = select_literal(p, F)
 	level += 1
 	if (dpll(land(F, l), decList, level) == SAT):
-		return SAT
+		return (SAT, decList)
 	return dpll(land(F, lnot(l)), decList, level)
 
 def exists_unit_clause(F):
@@ -60,19 +60,19 @@ def find_unit_clause(F):
 
 # note that l is a literal, not prop var.
 def resolve(l, F):
-	new_F = []
+	newF = []
 
 	for clause in F:
 		if l in clause:
 			continue
 		elif lnot(l) in clause:
-			new_clause = copy.deepcopy(clause)
-			new_clause.remove(lnot(l))
-			new_F.append(new_clause)
+			newClause = copy.deepcopy(clause)
+			newClause.remove(lnot(l))
+			newF.append(newClause)
 		else:
-			new_F.append(clause)
+			newF.append(clause)
 	
-	return new_F
+	return newF
 
 def contains_empty_clause(F):
 	for clause in F:
@@ -97,9 +97,9 @@ def select_literal(p, F):
 
 # logical and
 def land(F, l):
-	new_F = copy.deepcopy(F)
-	new_F.append(l)
-	return new_F
+	newF = copy.deepcopy(F)
+	newF.append(l)
+	return newF
 
 # logical not
 def lnot(l):
