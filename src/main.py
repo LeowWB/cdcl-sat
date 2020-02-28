@@ -84,7 +84,7 @@ def is_empty_cnf(F):
 	return len(F) == 0
 
 def all_vars_assigned(F, decList):
-	pass
+	return ap_formula(F) == set(map(ap_literal, decList))
 
 def select_prop_var(F):
 	pass
