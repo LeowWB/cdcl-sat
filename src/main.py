@@ -94,4 +94,10 @@ def lnot(l):
 def is_neg_literal(l):
 	return l[0] == "~"
 
+def ap_literal(l):
+	if (is_neg_literal(l)):
+		return lnot(l)
+	else:
+		return l
+
 main()
