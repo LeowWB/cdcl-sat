@@ -94,7 +94,9 @@ def select_literal(p, F):
 
 # logical and
 def land(F, l):
-	pass
+	new_F = copy.deepcopy(F)
+	new_F.append(l)
+	return new_F
 
 # logical not
 def lnot(l):
