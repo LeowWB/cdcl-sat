@@ -114,4 +114,16 @@ def ap_literal(l):
 	else:
 		return l
 
+def ap_clause(clause):
+	lit_set = set()
+	for l in clause:
+		lit_set.add(ap_literal(l))
+	return lit_set
+
+def ap_formula(F):
+	lit_set = set()
+	for clause in F:
+		lit_set = lit_set | ap_clause(clause)
+	return lit_set
+	
 main()
