@@ -59,7 +59,19 @@ def find_unit_clause(F):
 
 # note that l is a literal, not prop var.
 def resolve(l, F):
-	pass
+	new_F = []
+
+	for clause in F:
+		if l in clause:
+			continue
+		elif lnot(l) in clause:
+			new_clause = copy.deepcopy(clause)
+			new_clause.remove(lnot(l))
+			new_F.append(new_clause)
+		else:
+			new_F.append(clause)
+	
+	return new_F
 
 def contains_empty_clause(F):
 	for clause in F:
