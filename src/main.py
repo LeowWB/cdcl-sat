@@ -4,9 +4,12 @@
 	TODO
 	can probably combine exists_unit_clause with find_unit_clause and save the looping.
 	use profiler to see where time wasted
+	discard tautologies?
+	remove pure literals?
 """
 
 from io import read_input
+import copy
 
 UNSAT = False
 SAT = True
@@ -83,9 +86,12 @@ def land(F, l):
 
 # logical not
 def lnot(l):
-	if (l[0] == "~"):
+	if (is_neg_literal(l)):
 		return l[1:]
 	else:
 		return "~" + l
+
+def is_neg_literal(l):
+	return l[0] == "~"
 
 main()
