@@ -6,6 +6,7 @@
 	use profiler to see where time wasted
 	discard tautologies?
 	remove pure literals?
+	ctrl+F for other TODOs
 """
 
 from io import read_input
@@ -86,11 +87,13 @@ def is_empty_cnf(F):
 def all_vars_assigned(F, decList):
 	return ap_formula(F) == set(map(ap_literal, decList))
 
+# TODO make this better
 def select_prop_var(F):
-	pass
+	return ap_literal(F[0][0])
 
+# TODO make this better
 def select_literal(p, F):
-	pass
+	return p
 
 # logical and
 def land(F, l):
