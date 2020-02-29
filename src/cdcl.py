@@ -11,18 +11,13 @@
 	write test script
 """
 
-from io import read_input
 from util import *
 
 UNSAT = False
 SAT = True
 
-def main():
-	F = read_input()
-	print("Input:")
-	print(F)
-	print("\nOutput:")
-	print(dpll(F, [], 0))
+def cdcl(F):
+	return cdcl(F, [], 0)
 
 def unitProp(F):
 	assert is_formula(F), "unitProp assert formula" + str(F)
@@ -34,7 +29,7 @@ def unitProp(F):
 	return (propList, F)
 
 
-def dpll(F, decList, level):
+def cdcl(F, decList, level):
 	(propList, F) = unitProp(F)
 	decList.append(propList)
 	if (contains_empty_clause(F)):
@@ -46,9 +41,9 @@ def dpll(F, decList, level):
 	p = select_prop_var(F)
 	l = select_literal(p, F)
 	level += 1
-	if (dpll(land(F, l), copy.copy(decList), level) == SAT):
+	if (cdcl(land(F, l), copy.copy(decList), level) == SAT):
 		return (SAT, decList)
-	return dpll(land(F, lnot(l)), copy.copy(decList), level)
+	return cdcl(land(F, lnot(l)), copy.copy(decList), level)
 
 # note that l is a literal, not prop var.
 def resolve(l, F):
@@ -77,5 +72,3 @@ def select_prop_var(F):
 def select_literal(p, F):
 	assert is_formula(F), "select_literal assert formula" + str(F)
 	return p
-
-main()
