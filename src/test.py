@@ -1,4 +1,4 @@
-from cdcl import cdcl
+from cdcl import solve
 from util import *
 from io import read_input
 from os import listdir
@@ -14,6 +14,6 @@ def main():
 		print("Input:")
 		print(F)
 		print("\nOutput:")
-		print(cdcl(F, [], 0))
+		print(solve(F))
 
 main()

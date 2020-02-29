@@ -16,8 +16,9 @@ from util import *
 UNSAT = False
 SAT = True
 
-def cdcl(F):
-	return cdcl(F, [], 0)
+def solve(F):
+	result = cdcl(F, [], 0)
+	return (result[0], flatten(result[1]))
 
 def unitProp(F):
 	assert is_formula(F), "unitProp assert formula" + str(F)
