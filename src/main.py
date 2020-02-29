@@ -29,7 +29,7 @@ def unitProp(F):
 	assert is_formula(F), "unitProp assert formula" + str(F)
 	propList = [] # vars assigned thru inference
 	while (exists_unit_clause(F)):
-		l = find_unit_clause(F)
+		l = unpack_singleton_clause(find_unit_clause(F))
 		propList.append(l)
 		F = resolve(l, F)
 	return (propList, F)
@@ -116,7 +116,7 @@ def land(F, l):
 	assert is_literal(l), "land assert literal" + str(l)
 	assert is_formula(F), "land assert formula" + str(F)
 	newF = copy.deepcopy(F)
-	newF.append(singleton_clause(l))
+	newF.append(make_singleton_clause(l))
 	return newF
 
 # logical not
@@ -161,7 +161,10 @@ def is_clause(clause):
 def is_formula(F):
 	return isinstance(F, list) and (len(F) == 0 or is_clause(F[0]))
 
-def singleton_clause(l):
+def make_singleton_clause(l):
 	return [l]
+
+def unpack_singleton_clause(clause):
+	return clause[0]
 
 main()
