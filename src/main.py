@@ -116,7 +116,7 @@ def land(F, l):
 	assert is_literal(l), "land assert literal" + str(l)
 	assert is_formula(F), "land assert formula" + str(F)
 	newF = copy.deepcopy(F)
-	newF.append(l)
+	newF.append(singleton_clause(l))
 	return newF
 
 # logical not
@@ -160,5 +160,8 @@ def is_clause(clause):
 	
 def is_formula(F):
 	return isinstance(F, list) and (len(F) == 0 or is_clause(F[0]))
+
+def singleton_clause(l):
+	return [l]
 
 main()
