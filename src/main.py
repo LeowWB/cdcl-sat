@@ -25,6 +25,7 @@ def main():
 	print(dpll(F, [], 0))
 
 def unitProp(F):
+	assert is_formula(F), "unitProp assert formula"
 	propList = [] # vars assigned thru inference
 	while (exists_unit_clause(F)):
 		l = find_unit_clause(F)
@@ -50,6 +51,7 @@ def dpll(F, decList, level):
 	return dpll(land(F, lnot(l)), decList, level)
 
 def exists_unit_clause(F):
+	assert is_formula(F), "exists_unit_clause assert"
 	for clause in F:
 		if (len(clause) == 1):
 			return True
@@ -57,6 +59,7 @@ def exists_unit_clause(F):
 	return False
 
 def find_unit_clause(F):
+	assert is_formula(F), "find_unit_clause assert"
 	for clause in F:
 		if (len(clause) == 1):
 			return clause
@@ -65,6 +68,8 @@ def find_unit_clause(F):
 
 # note that l is a literal, not prop var.
 def resolve(l, F):
+	assert is_literal(l), "resolve assert literal"
+	assert is_formula(F), "resolve assert formula"
 	newF = []
 
 	for clause in F:
@@ -80,6 +85,7 @@ def resolve(l, F):
 	return newF
 
 def contains_empty_clause(F):
+	assert is_formula(F), "contains_empty_clause assert"
 	for clause in F:
 		if (len(clause) == 0):
 			return True
@@ -87,51 +93,71 @@ def contains_empty_clause(F):
 	return False
 
 def is_empty_cnf(F):
+	assert is_formula(F), "is_empty_cnf assert"
 	return len(F) == 0
 
 def all_vars_assigned(F, decList):
+	assert is_formula(F), "all_vars_assigned assert"
 	return ap_formula(F) == set(map(ap_literal, decList))
 
 # TODO make this better
 def select_prop_var(F):
+	assert is_formula(F), "select_prop_var assert"
 	return ap_literal(F[0][0])
 
 # TODO make this better
 def select_literal(p, F):
+	assert is_formula(F), "select_literal assert formula"
 	return p
 
 # logical and
 def land(F, l):
+	assert is_literal(l), "land assert literal"
+	assert is_formula(F), "land assert formula"
 	newF = copy.deepcopy(F)
 	newF.append(l)
 	return newF
 
 # logical not
 def lnot(l):
+	assert is_literal(l), "lnot assert"
 	if (is_neg_literal(l)):
 		return l[1:]
 	else:
 		return "~" + l
 
 def is_neg_literal(l):
+	assert is_literal(l), "is_neg_literal assert"
 	return l[0] == "~"
 
 def ap_literal(l):
+	assert is_literal(l), "ap_literal assert"
 	if (is_neg_literal(l)):
 		return lnot(l)
 	else:
 		return l
 
 def ap_clause(clause):
+	assert is_clause(clause), "ap_clause assert"
 	lit_set = set()
 	for l in clause:
 		lit_set.add(ap_literal(l))
 	return lit_set
 
 def ap_formula(F):
+	assert is_formula(F), "ap_formula assert"
 	lit_set = set()
 	for clause in F:
 		lit_set = lit_set | ap_clause(clause)
 	return lit_set
+
+def is_literal(l):
+	return isinstance(l, str)
+
+def is_clause(clause):
+	return isinstance(clause, list) and (len(clause) == 0 or is_literal(clause[0]))
 	
+def is_formula(F):
+	return isinstance(F, list) and (len(F) == 0 or is_clause(F[0]))
+
 main()
