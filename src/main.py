@@ -17,7 +17,10 @@ SAT = True
 
 def main():
 	F = read_input()
+	print("Input:")
 	print(F)
+	print("\nOutput:")
+	print(dpll(F, [], 0))
 
 def unitProp(F):
 	propList = [] # vars assigned thru inference
