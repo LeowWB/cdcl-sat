@@ -41,7 +41,7 @@ def dpll(F, decList, level):
 		return (SAT, decList)
 	if (all_vars_assigned(F, decList)):
 		return (SAT, decList)
-	decList[level] = propList
+	decList.append(propList)
 	p = select_prop_var(F)
 	l = select_literal(p, F)
 	level += 1
