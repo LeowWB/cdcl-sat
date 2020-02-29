@@ -7,6 +7,7 @@ TEST_DIR = "../test/test/"
 
 def main():
 	count = 0
+	perfect = True
 
 	for file in listdir(TEST_DIR):
 		count += 1
@@ -16,7 +17,11 @@ def main():
 		if check(F, result, file):
 			print(file + " ok")
 		else:
+			perfect = False
 			print(file + " FAIL")
+
+	if (perfect):
+		print("==============================\nALL TESTS PASSED\n==============================")
 
 def check(F, result, file):
 	if "uuf" in file:
