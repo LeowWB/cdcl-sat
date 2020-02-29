@@ -1,2 +1,3 @@
 a b c
+~a ~b ~c
 ~j k l
