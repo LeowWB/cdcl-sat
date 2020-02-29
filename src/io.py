@@ -11,7 +11,7 @@ def read_input(file):
 	f = open(file, "r")
 
 	for line in f:
-		if len(line) < 5:
+		if len(line) < 3:
 			continue
 
 		if line[0] in ["c", "p", "%"]:
