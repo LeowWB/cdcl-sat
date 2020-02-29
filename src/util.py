@@ -38,11 +38,11 @@ def lnot(l):
 	if (is_neg_literal(l)):
 		return l[1:]
 	else:
-		return "~" + l
+		return "-" + l
 
 def is_neg_literal(l):
 	assert is_literal(l), "is_neg_literal assert" + str(l)
-	return l[0] == "~"
+	return l[0] == "-"
 
 def ap_literal(l):
 	assert is_literal(l), "ap_literal assert" + str(l)
