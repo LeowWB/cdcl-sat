@@ -12,6 +12,7 @@
 """
 
 from io import read_input
+from util import flatten
 import copy
 
 UNSAT = False
@@ -98,7 +99,7 @@ def is_empty_cnf(F):
 
 def all_vars_assigned(F, decList):
 	assert is_formula(F), "all_vars_assigned assert"
-	return ap_formula(F) == set(map(ap_literal, decList))
+	return ap_formula(F) == set(map(ap_literal, flatten(decList)))
 
 # TODO make this better
 def select_prop_var(F):
