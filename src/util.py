@@ -1,6 +1,9 @@
 import copy
 
 def flatten(xs):
+	if (xs == None or len(xs) == 0):
+		return xs
+
 	ys = []
 	for x in xs:
 		if isinstance(x, list):
