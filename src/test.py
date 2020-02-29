@@ -17,8 +17,6 @@ def main():
 			print(file + " ok")
 		else:
 			print(file + " FAIL")
-			print("F: " + str(F))
-			print("Result: " + str(result))
 
 def check(F, result, file):
 	if "uuf" in file:
