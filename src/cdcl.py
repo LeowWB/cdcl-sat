@@ -43,8 +43,10 @@ def cdcl(F, decList, level):
 	p = select_prop_var(F)
 	l = select_literal(p, F)
 	level += 1
-	if (cdcl(land(F, l), copy.copy(decList), level) == SAT):
-		return (SAT, decList)
+	# result1 is the result of running cdcl over F ^ l
+	result1 = cdcl(land(F, l), copy.copy(decList), level)
+	if result1[0] == SAT:
+		return result1
 	return cdcl(land(F, lnot(l)), copy.copy(decList), level)
 
 # note that l is a literal, not prop var.
