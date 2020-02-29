@@ -37,13 +37,13 @@ def unitProp(F):
 
 def dpll(F, decList, level):
 	(propList, F) = unitProp(F)
+	decList.append(propList)
 	if (contains_empty_clause(F)):
 		return (UNSAT, None)
 	if (is_empty_cnf(F)):
 		return (SAT, decList)
 	if (all_vars_assigned(F, decList)):
 		return (SAT, decList)
-	decList.append(propList)
 	p = select_prop_var(F)
 	l = select_literal(p, F)
 	level += 1
