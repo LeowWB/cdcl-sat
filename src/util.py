@@ -99,10 +99,4 @@ def find_unit_clause(F):
 			return clause
 	
 	return None
-
-def print_formula(F):
-	out = "s============================================\n"
-	for clause in F:
-		out += str(clause) + "\n"
-	out += "e=============================================="
-	print(out)
+	

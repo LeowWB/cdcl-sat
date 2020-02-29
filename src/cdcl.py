@@ -12,6 +12,7 @@
 """
 
 from util import *
+from debug import *
 
 UNSAT = False
 SAT = True
