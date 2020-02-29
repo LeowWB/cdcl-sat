@@ -7,6 +7,8 @@
 	discard tautologies?
 	remove pure literals?
 	ctrl+F for other TODOs
+	modify the input/output methods to make testing easier.
+	write test script
 """
 
 from io import read_input
