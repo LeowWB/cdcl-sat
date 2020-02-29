@@ -47,9 +47,9 @@ def dpll(F, decList, level):
 	p = select_prop_var(F)
 	l = select_literal(p, F)
 	level += 1
-	if (dpll(land(F, l), decList, level) == SAT):
+	if (dpll(land(F, l), copy.copy(decList), level) == SAT):
 		return (SAT, decList)
-	return dpll(land(F, lnot(l)), decList, level)
+	return dpll(land(F, lnot(l)), copy.copy(decList), level)
 
 def exists_unit_clause(F):
 	assert is_formula(F), "exists_unit_clause assert" + str(F)
