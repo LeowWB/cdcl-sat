@@ -11,8 +11,8 @@
 	write test script
 """
 
-from io import read_input
-from util import flatten
+from io import *
+from util import *
 import copy
 
 UNSAT = False
