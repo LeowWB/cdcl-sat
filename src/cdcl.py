@@ -13,6 +13,7 @@
 
 from util import *
 from debug import *
+from graph import Graph
 
 UNSAT = False
 SAT = True
