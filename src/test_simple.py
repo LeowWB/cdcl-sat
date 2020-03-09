@@ -6,7 +6,7 @@ from os import listdir
 def main():
 	
 	F = read_input("../test/simple/simple.cnf")
-	result = solve(F)
+	result = solve(F, False)
 	print(result)
-	
+
 main()

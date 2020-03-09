@@ -18,9 +18,13 @@ from graph import Graph
 UNSAT = False
 SAT = True
 
-def solve(F):
+def solve(F, flat=True):
 	result = cdcl(F, [], 0)
-	return (result[0], flatten(result[1]))
+
+	if flat:
+		return (result[0], flatten(result[1]))
+	else:
+		return result
 
 def unitProp(F):
 	assert is_formula(F), "unitProp assert formula" + str(F)
