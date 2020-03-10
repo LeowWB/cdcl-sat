@@ -26,8 +26,8 @@ def solve(F, flat=True):
 	else:
 		return result
 
-def unitProp(F):
-	assert is_formula(F), "unitProp assert formula" + str(F)
+def unit_prop(F):
+	assert is_formula(F), "unit_prop assert formula" + str(F)
 	propList = [] # vars assigned thru inference
 	while (exists_unit_clause(F)):
 		l = unpack_unit_clause(find_unit_clause(F))
@@ -37,7 +37,7 @@ def unitProp(F):
 
 
 def cdcl(F, decList, level):
-	(propList, F) = unitProp(F)
+	(propList, F) = unit_prop(F)
 	decList.append(propList)
 	if (contains_empty_clause(F)):
 		return (UNSAT, None)
