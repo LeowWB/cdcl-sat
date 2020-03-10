@@ -9,6 +9,8 @@
 	ctrl+F for other TODOs
 	modify the input/output methods to make testing easier.
 	write test script
+	see if can reduce the amt of d8a stored in graph nodes (truth? diff edge for each parent?)
+		truth - maybe can do this w a boolean list instead.
 """
 
 from util import *
@@ -18,7 +20,12 @@ from graph import Graph
 UNSAT = False
 SAT = True
 
+#F = []
+#infGraph = Graph()
+
 def solve(F, flat=True):
+	#originalF.extend(F)
+	#infGraph.set_size(len(ap_formula(F)))
 	result = cdcl(F, [], 0)
 
 	if flat:
@@ -30,9 +37,11 @@ def unit_prop(F):
 	assert is_formula(F), "unit_prop assert formula" + str(F)
 	propList = [] # vars assigned thru inference
 	while (exists_unit_clause(F)):
-		l = unpack_unit_clause(find_unit_clause(F))
+		unitClause = find_unit_clause(F)
+		l = unpack_unit_clause(unitClause)
 		propList.append(l)
 		F = resolve(l, F)
+		update_graph(propList, unitClause)
 	return (propList, F)
 
 
@@ -81,3 +90,20 @@ def select_prop_var(F):
 def select_literal(p, F):
 	assert is_formula(F), "select_literal assert formula" + str(F)
 	return p
+
+# this is called after unit propagation resolution. it updates the inference graph.
+def update_graph(propList, unitClause):
+	#literal = unpack_unit_clause(unitClause)
+	#propVar = ap_literal(literal)
+
+	if len(propList) == 1:
+		# unit clause was created as the result of a guess
+		assert unitClause.id == -1
+		#infGraph.create_node(int(propVar), not is_neg_literal(literal))
+	else:
+		# unit clause was resolved from a clause that was present in the original F
+		assert unitClause.id >= 0
+		#originalClause = originalF[unitClause.id].clone()
+		#originalClause.literals.remove(literal)
+		#infGraph.create_node(int(propVar), not is_neg_literal(literal))
+		#infGraph.connect_clause(int(propVar), originalClause)
