@@ -1,17 +1,25 @@
+from util import ap_literal
+
 class Graph:
 	nodes = [] # index i will be the node corresponding to prop var i.
 	order = [] # order in which prop vars were added. represented only by id.
-	
-	def __init__(self, size):
-		nodes = [None] * (size + 10) #TODO to avoid off-by-one error for now
+
+	def set_size(self, size):
+		self.nodes = [None] * (size + 10) #TODO to avoid off-by-one error for now
 
 	def connect(self, child, parent, edge):
-		child_node = nodes[child]
+		child_node = self.nodes[child]
 		child_node.add_parent(parent, edge)
 	
+	# for convenience
+	def connect_clause(self, child, clause):
+		for literal in clause.literals:
+			parent = int(ap_literal(literal))
+			self.nodes[child].add_parent(parent, clause.id)
+
 	def create_node(self, index, truth):
-		nodes[index] = Node(index, truth)
-		order.append(index)
+		self.nodes[index] = Node(index, truth)
+		self.order.append(index)
 
 """
 	each node represents a single propositional variable.
