@@ -25,7 +25,7 @@ def is_formula(F):
 def make_singleton_clause(l):
 	return Clause(-1, [l])
 
-def unpack_singleton_clause(clause):
+def unpack_unit_clause(clause):
 	return clause.literals[0]
 
 # logical and

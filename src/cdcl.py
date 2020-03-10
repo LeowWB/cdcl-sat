@@ -30,7 +30,7 @@ def unitProp(F):
 	assert is_formula(F), "unitProp assert formula" + str(F)
 	propList = [] # vars assigned thru inference
 	while (exists_unit_clause(F)):
-		l = unpack_singleton_clause(find_unit_clause(F))
+		l = unpack_unit_clause(find_unit_clause(F))
 		propList.append(l)
 		F = resolve(l, F)
 	return (propList, F)
