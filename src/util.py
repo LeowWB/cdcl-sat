@@ -81,6 +81,8 @@ def contains_empty_clause(F):
 	assert is_formula(F), "contains_empty_clause assert" + str(F)
 	for clause in F:
 		if (len(clause.literals) == 0):
+			# because of our implementation, non-original clauses should never be found empty.
+			assert (clause.id >= 0), "empty clause wasn't one of the original clauses!"
 			return True
 	
 	return False
