@@ -1,6 +1,6 @@
 class Graph:
-	nodes = []
-	order = []
+	nodes = [] # index i will be the node corresponding to prop var i.
+	order = [] # order in which prop vars were added. represented only by id.
 	
 	def __init__(self, size):
 		nodes = [None] * (size + 10) #TODO to avoid off-by-one error for now
@@ -13,7 +13,12 @@ class Graph:
 		nodes[index] = Node(index, truth)
 		order.append(index)
 
-
+"""
+	each node represents a single propositional variable.
+	
+	each element in parents is a list, whose first element is the parent node's id, and whose
+	2nd element is the clause id through which the inference was made. 
+"""
 class Node:
 	def __init__(self, id, truth):
 		self.id = id
