@@ -61,11 +61,11 @@ def resolve(l, F):
 	newF = []
 
 	for clause in F:
-		if l in clause:
+		if l in clause.literals:
 			continue
-		elif lnot(l) in clause:
+		elif lnot(l) in clause.literals:
 			newClause = copy.deepcopy(clause)
-			newClause.remove(lnot(l))
+			newClause.literals.remove(lnot(l))
 			newF.append(newClause)
 		else:
 			newF.append(clause)
@@ -75,7 +75,7 @@ def resolve(l, F):
 # TODO make this better
 def select_prop_var(F):
 	assert is_formula(F), "select_prop_var assert" + str(F)
-	return ap_literal(F[0][0])
+	return ap_literal(F[0].literals[0])
 
 # TODO make this better
 def select_literal(p, F):

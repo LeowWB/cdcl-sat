@@ -13,7 +13,7 @@ def write_formula_dimacs(F, file, method):
 	f.write("p cnf " + str(len(ap_formula(F))) + " " + str(len(F)) + "\n")
 
 	for clause in F:
-		for l in clause:
+		for l in clause.literals:
 			f.write(str(l) + " ")
 		
 		f.write("0\n")

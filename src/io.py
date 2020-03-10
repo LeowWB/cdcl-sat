@@ -5,10 +5,12 @@
 """
 
 from string import strip
+from clause import Clause
 
 def read_input(file):
 	cnf = []
 	f = open(file, "r")
+	clause_id = 0
 
 	for line in f:
 		if len(line) < 3:
@@ -18,6 +20,8 @@ def read_input(file):
 			continue
 
 		props = strip(line)[:-1].split()		# get rid of the trailing 0
-		cnf.append(props)
+		clause = Clause(clause_id, props)
+		cnf.append(clause)
+		clause_id += 1
 	
 	return cnf

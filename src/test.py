@@ -33,7 +33,7 @@ def check(F, result, file):
 	tau = set(result[1])
 
 	for clause in F:
-		if set(clause).intersection(tau) == set():
+		if set(clause.literals).intersection(tau) == set():
 			return False
 		
 	return True
