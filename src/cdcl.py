@@ -95,18 +95,17 @@ class Cdcl:
 
 	# this is called after unit propagation resolution. it updates the inference graph.
 	def update_graph(self, propList, unitClause):
-		#literal = unpack_unit_clause(unitClause)
-		#propVar = ap_literal(literal)
+		literal = unpack_unit_clause(unitClause)
+		propVar = ap_literal(literal)
 
 		if len(propList) == 1:
 			# unit clause was created as the result of a guess
 			assert unitClause.id == -1
-			#infGraph.create_node(int(propVar), not is_neg_literal(literal))
+			self.graph.create_node(int(propVar), not is_neg_literal(literal))
 		else:
 			# unit clause was resolved from a clause that was present in the original F
 			assert unitClause.id >= 0
-			# we renamed originalF
-			#originalClause = originalF[unitClause.id].clone()
-			#originalClause.literals.remove(literal)
-			#infGraph.create_node(int(propVar), not is_neg_literal(literal))
-			#infGraph.connect_clause(int(propVar), originalClause)
+			originalClause = self.F[unitClause.id].clone()
+			originalClause.literals.remove(literal)
+			self.graph.create_node(int(propVar), not is_neg_literal(literal))
+			self.graph.connect_clause(int(propVar), originalClause)
