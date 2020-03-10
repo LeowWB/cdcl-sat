@@ -1,4 +1,4 @@
-from cdcl import solve
+from cdcl import Cdcl
 from util import *
 from io import read_input
 from os import listdir
@@ -6,7 +6,7 @@ from os import listdir
 def main():
 	
 	F = read_input("../test/simple/simple.cnf")
-	result = solve(F, False)
+	result = Cdcl(F, False).solve()
 	print(result)
 
 main()

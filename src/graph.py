@@ -4,7 +4,7 @@ class Graph:
 	nodes = [] # index i will be the node corresponding to prop var i.
 	order = [] # order in which prop vars were added. represented only by id.
 
-	def set_size(self, size):
+	def __init__(self, size):
 		self.nodes = [None] * (size + 10) #TODO to avoid off-by-one error for now
 
 	def connect(self, child, parent, edge):

@@ -1,4 +1,4 @@
-from cdcl import solve
+from cdcl import Cdcl
 from util import *
 from io import read_input
 from os import listdir
@@ -12,7 +12,9 @@ def main():
 	for file in listdir(TEST_DIR):
 		count += 1
 		F = read_input(TEST_DIR + file)
-		result = solve(F)
+
+		solver = Cdcl(F)
+		result = solver.solve()
 
 		if check(F, result, file):
 			print(file + " ok")
