@@ -19,3 +19,7 @@ def write_formula_dimacs(F, file, method):
 		f.write("0\n")
 	
 	f.close()
+
+def print_clause(clause):
+	print(str(clause.id) + str(clause.literals))
+	
