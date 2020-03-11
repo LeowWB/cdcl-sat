@@ -22,4 +22,14 @@ def write_formula_dimacs(F, file, method):
 
 def print_clause(clause):
 	print(str(clause.id) + str(clause.literals))
-	
+
+def print_graph(graph):
+	print("====GRAPH====")
+	for node in graph.nodes:
+		if node == None:
+			continue
+		nodeStr = (str(node.id) + " " + str(node.truth) + " ")
+		for parent in node.parents:
+			nodeStr += str(parent) + " "
+		print(nodeStr)
+	print("===ENDGRAPH====")
