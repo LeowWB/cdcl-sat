@@ -60,11 +60,11 @@ class Cdcl:
 		l = self.select_literal(p, F)
 		level += 1
 		# result1 is the result of running cdcl over F ^ l
-		#graphCopy = copy.deepcopy(self.graph)
+		graphCopy = copy.deepcopy(self.graph)
 		result1 = self.cdcl(land(F, l), copy.copy(decList), level)
 		if result1[0] == SAT:
 			return result1
-		#self.graph = graphCopy
+		self.graph = graphCopy
 		return self.cdcl(land(F, lnot(l)), copy.copy(decList), level)
 
 	# note that l is a literal, not prop var.
