@@ -21,6 +21,9 @@ class Graph:
 		self.nodes[index] = Node(index, truth)
 		self.order.append(index)
 
+	def get_last_node(self):
+		return self.nodes[self.order[-1]]
+		
 """
 	each node represents a single propositional variable.
 	
