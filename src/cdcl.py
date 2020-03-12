@@ -9,8 +9,9 @@
 	ctrl+F for other TODOs
 	modify the input/output methods to make testing easier.
 	write test script
-	see if can reduce the amt of d8a stored in graph nodes (truth? diff edge for each parent?)
+	see if can reduce the amt of d8a stored in graph nodes
 		truth - maybe can do this w a boolean list instead.
+		may not need to store 1 edge per parent - 1 edge for whole node is fine
 """
 
 from util import *
@@ -111,3 +112,20 @@ class Cdcl:
 			originalClause.literals.remove(literal)
 			self.graph.create_node(int(propVar), not is_neg_literal(literal))
 			self.graph.connect_clause(int(propVar), originalClause)
+
+	def diagnose(self, decList):
+		curLevelLits = decList[-1]						# all lits assigned in current level
+		curLevelVars = map(ap_literal, curLevelLits)	# all vars assigned in current level
+		lastAddedNode = self.graph.get_last_node()
+		learnedClause = lastAddedNode.parents[0][1]		# partial learned clause
+		while len(ap_clause(learnedClause) & set(curLevelVars) > 1):
+			nextClause = self.diagnose_get_next_clause()
+			learnedClause = self.diagnose_resolve(learnedClause, nextClause)
+		return 0
+
+	def diagnose_get_next_clause(self):
+		pass
+
+	# resolution in the context of conflict diagnosis
+	def diagnose_resolve(self, c1, c2):
+		pass
