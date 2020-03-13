@@ -3,7 +3,7 @@ from util import ap_formula
 def print_formula(F):
 	out = "s============================================\n"
 	for clause in F:
-		out += str(clause) + "\n"
+		out += str(clause.id) + str(clause.literals) + "\n"
 	out += "e=============================================="
 	print(out)
 
