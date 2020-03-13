@@ -7,11 +7,6 @@ class Graph:
 	def __init__(self, size):
 		self.nodes = [None] * (size + 10) #TODO to avoid off-by-one error for now
 
-	def connect(self, child, parent, edge):
-		child_node = self.nodes[child]
-		child_node.add_parent(parent, edge)
-	
-	# for convenience
 	def connect_clause(self, child, clause):
 		for literal in clause.literals:
 			parent = int(ap_literal(literal))
@@ -23,7 +18,7 @@ class Graph:
 
 	def get_last_node(self):
 		return self.nodes[self.order[-1]]
-		
+
 """
 	each node represents a single propositional variable.
 	
