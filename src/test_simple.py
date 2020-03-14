@@ -6,7 +6,7 @@ from debug import *
 
 def main():
 	
-	F = read_input("../test/simple/simple.cnf")
+	F = read_input("../test/simple/simple2.cnf")
 	cdcl = Cdcl(F, False)
 	result = cdcl.solve()
 	print(result)
