@@ -1,9 +1,10 @@
 from cdcl import Cdcl
 from util import *
-from io import read_input
+from io_cnf import read_input
 from os import listdir
+from debug import *
 
-TEST_DIR = "../test/test/"
+TEST_DIR = "test/test/"
 
 def main():
 	count = 0
@@ -15,6 +16,7 @@ def main():
 
 		solver = Cdcl(F)
 		result = solver.solve()
+
 
 		if check(F, result, file):
 			print(file + " ok")
