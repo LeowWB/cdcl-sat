@@ -25,6 +25,7 @@ SAT = True
 class Cdcl:
 	def __init__(self, F, flat=True):
 		self.F = copy.deepcopy(F)
+		self.MAX_ID = len(F)
 		self.graph = Graph(len(ap_formula(F)))
 		self.flat = flat	# whether we'll flatten output
 		self.L = []			# lemmas that we've learnt
@@ -51,7 +52,12 @@ class Cdcl:
 					continue
 			l = unpack_unit_clause(unitClause)
 			propList.append(l)
+			# print('before resolution')
+			# print_formula(F)
+			# print(propList, unitClause.literals, unitClause.id)
 			F = self.resolve(l, F, agenda)
+			# print("my F for the original clause below after resolution: ", end='')
+			# print_formula(F)
 			self.update_graph(propList, unitClause, level)
 		return (propList, F)
 
@@ -61,7 +67,9 @@ class Cdcl:
 		decList.append(propList)
 		if (contains_empty_clause(F)):
 			empty_clause = find_empty_clause(F)
+			# print('empty_clause: ', empty_clause.id, empty_clause.literals, decList)
 			newLemma = self.diagnose(decList, empty_clause.id, F)
+			# print('newLemma: ', newLemma.literals)
 			self.L.append(newLemma)
 
 			#decide where to backtrack to. TODO this can be abstracted out. 
@@ -87,7 +95,9 @@ class Cdcl:
 		level += 1
 		# result1 is the result of running cdcl over F ^ l
 		graphCopy = copy.deepcopy(self.graph)
+		# print('land operation result: ', print_formula(land(F,l)), print_formula(F))	
 		result1 = self.cdcl(land(F, l), copy.copy(decList), level)
+		# print('result1 ', result1)
 		if result1[0] == SAT:
 			return result1
 
@@ -97,7 +107,6 @@ class Cdcl:
 			return result1
 		
 		F = self.apply_decisions(decList, F)
-
 		self.graph = graphCopy
 		return self.cdcl(land(F, lnot(l)), copy.copy(decList), level)
 
@@ -106,7 +115,6 @@ class Cdcl:
 		assert is_literal(l), "resolve assert literal" + str(l)
 		assert is_formula(F), "resolve assert formula" + str(F)
 		newF = []
-
 		for clause in F:
 			if l in clause.literals:
 				continue
@@ -118,7 +126,6 @@ class Cdcl:
 					agenda.append(newClause)
 			else:
 				newF.append(clause)
-		
 		return newF
 
 	# TODO make this better
@@ -135,7 +142,6 @@ class Cdcl:
 	def update_graph(self, propList, unitClause, level):
 		literal = unpack_unit_clause(unitClause)
 		propVar = ap_literal(literal)
-
 		if len(propList) == 1:
 			# unit clause was created as the result of a guess
 			assert unitClause.id == -1
@@ -155,7 +161,10 @@ class Cdcl:
 		learnedClauseInd = emptyClauseId				# partial learned clause
 		learnedClause = self.F[learnedClauseInd]
 		learnedClauseCopy = copy.deepcopy(learnedClause)
-		conflictNodeId = int(curLevelVars[-1])
+		item = None
+		for item in curLevelVars:
+			pass
+		# conflictNodeId = int(list(curLevelVars)[-1])	# TODO: Buggy line affecting learned clauses.
 		varsWhoseClausesWeveResolved = set()
 		while len(ap_clause(learnedClause) & set(curLevelVars)) > 1:
 			try:
@@ -178,7 +187,6 @@ class Cdcl:
 				learnedClause = self.diagnose_resolve(learnedClause, nextClause)
 			except Exception as e:
 				print(e)
-
 		return learnedClause
 
 	# resolution in the context of conflict diagnosis
@@ -199,7 +207,6 @@ class Cdcl:
 	def apply_decisions(self, decList, F):
 		flatList = flatten(decList)
 		newL = []
-
 		for clause in self.L:
 			intersectionSize = len(set(flatList).intersection(set(clause.literals)))
 			if intersectionSize != 0:
@@ -209,8 +216,5 @@ class Cdcl:
 			for lit in newClause.literals:
 				if lnot(lit) in flatList:
 					newClause.literals.remove(lit)
-			
-			newClause.id = len(F) + len(newL)
 			newL.append(newClause)
-			
 		return copy.deepcopy(F) + newL
