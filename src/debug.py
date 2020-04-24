@@ -1,4 +1,5 @@
 from util import ap_formula
+from pycryptosat import Solver
 
 def print_formula(F):
 	out = "s============================================\n"
@@ -33,3 +34,18 @@ def print_graph(graph):
 			nodeStr += str(parent) + " "
 		print(nodeStr)
 	print("===ENDGRAPH====")
+
+def cryptosolve(formula):
+	s = Solver()
+	for c in formula_to_cryptosat_clauses(formula):
+		s.add_clause(c)
+	return s.solve()
+
+def formula_to_cryptosat_clauses(formula):
+	rv = []
+	for c in formula:
+		new_c = []
+		for l in c.literals:
+			new_c.append(int(l))
+		rv.append(new_c)
+	return rv

@@ -18,6 +18,9 @@ from util import *
 from debug import *
 from graph import Graph
 from copy import deepcopy
+from networkx import DiGraph, draw_networkx
+import matplotlib.pyplot as plt
+from pdb import set_trace
 
 UNSAT = False
 SAT = True
@@ -26,65 +29,107 @@ class Cdcl:
 	def __init__(self, F, flat=True):
 		self.F = copy.deepcopy(F)
 		self.MAX_ID = len(F)
-		self.graph = Graph(len(ap_formula(F)))
+		self.G = DiGraph()
 		self.flat = flat	# whether we'll flatten output
 		self.L = []			# lemmas that we've learnt
 
 	def solve(self):
 		F = copy.deepcopy(self.F)
-		result = self.cdcl(F, [], 0)
+		result = self.cdcl(F, [], 0, self.G.copy())
 
 		if self.flat:
 			return (result[0], flatten(result[1]))
 		else:
 			return result
 
-	def unit_prop(self, F, level):
+	def unit_prop(self, F, level, G):
 		assert is_formula(F), "unit_prop assert formula" + str(F)
 		propList = [] # vars assigned thru inference
 		agenda = [] #stack. purpose of this is so we explore in a more DFS-like manner
+		debug_clauseswegotridof = []
 		while (exists_unit_clause(F) and not contains_empty_clause(F)):
 			if (len(agenda) == 0):
 				unitClause = find_unit_clause(F)
+				if unitClause.id == -1:
+					deb = unpack_unit_clause(unitClause)
+					deb = ap_literal(deb)
+					deb = int(deb)
+					assert not (deb in set(G.nodes)), "why's it inside 2"
 			else:
 				unitClause = agenda.pop()
 				if not len(unitClause.literals) == 1:
 					continue
 			l = unpack_unit_clause(unitClause)
 			propList.append(l)
+			debug_clauseswegotridof.append(unitClause.id)
 			# print('before resolution')
 			# print_formula(F)
 			# print(propList, unitClause.literals, unitClause.id)
 			F = self.resolve(l, F, agenda)
 			# print("my F for the original clause below after resolution: ", end='')
 			# print_formula(F)
-			self.update_graph(propList, unitClause, level)
-		return (propList, F)
+			G = self.update_graph(G, propList, unitClause, level)
+		#debug_noneg1 = True
+		#for id in debug_clauseswegotridof:
+		#	if id == -1:
+		#		debug_noneg1 = False
+		#if debug_noneg1 and level > 0:
+		#	set_trace()
+		#debug_allreason = True
+		#for prop in propList:
+		#	ind = int(ap_literal(prop))
+		#	if not "reason" in G.nodes[ind]:
+		#		debug_allreason = False
+		#if debug_allreason and level > 0:
+		#	set_trace()
+
+		return (propList, F, G)
 
 
-	def cdcl(self, F, decList, level):
-		(propList, F) = self.unit_prop(F, level)
+	def cdcl(self, F, decList, level, G):
+		#if not cryptosolve(self.F)[0]:
+		#	set_trace()
+
+		assert set(map(lambda x: int(ap_literal(x)), flatten(decList))) == set(G.nodes), "why not same"
+		deb_numneg1 = 0
+		for clause in F:
+			if clause.id==-1:
+				deb_numneg1 += 1
+		
+		assert deb_numneg1 < 2, "why more than 1 neg1"
+		(propList, F, G) = self.unit_prop(F, level, G)
 		decList.append(propList)
 		if (contains_empty_clause(F)):
 			empty_clause = find_empty_clause(F)
 			# print('empty_clause: ', empty_clause.id, empty_clause.literals, decList)
-			newLemma = self.diagnose(decList, empty_clause.id, F)
+			newLemma = self.diagnose_alt(G, decList, empty_clause.id, F)
 			# print('newLemma: ', newLemma.literals)
-			self.L.append(newLemma)
+			newLemma.id = len(self.F)
+
+			lemma_is_trivial = False
+			for lit in newLemma.literals:
+				if lnot(lit) in newLemma.literals:
+					lemma_is_trivial = True
+					break
+				
+			if not lemma_is_trivial:
+				self.F.append(newLemma)
+			else:
+				assert False, "WHY TRIVIAL"
 
 			#decide where to backtrack to. TODO this can be abstracted out. 
 			# we can have multiple "algorithms" for
 			# deciding where to backtrack to. can say in report which is best.
 			#this one takes 2nd biggest number among the levels of the vars in the clause
-			biggest = [0,0]
+			"""biggest = [0,0]
 			for clauseVar in ap_clause(newLemma):
-				curVarLevel = self.graph.nodes[int(clauseVar)].level
+				curVarLevel = G.nodes[int(clauseVar)]["l"]
 				if curVarLevel > biggest[0]:
 					biggest[1] = biggest[0]
 					biggest[0] = curVarLevel
 				elif curVarLevel > biggest[1]:
-					biggest[1] = curVarLevel
-
+					biggest[1] = curVarLevel"""
+			biggest = [0, 9999]
 			return (UNSAT, None, biggest[1])
 		if (is_empty_cnf(F)):
 			return (SAT, decList)
@@ -93,10 +138,15 @@ class Cdcl:
 		p = self.select_prop_var(F)
 		l = self.select_literal(p, F)
 		level += 1
+
+		#assert not (p in set(map(ap_literal, flatten(decList)))), "why you still make this decision"
+
+		#for clause in F:
+		#	assert clause.id > -1, "WHY HERE GOT ID NEGATIVE"
+
 		# result1 is the result of running cdcl over F ^ l
-		graphCopy = copy.deepcopy(self.graph)
 		# print('land operation result: ', print_formula(land(F,l)), print_formula(F))	
-		result1 = self.cdcl(land(F, l), copy.copy(decList), level)
+		result1 = self.cdcl(land(F, l), copy.copy(decList), level, G.copy())
 		# print('result1 ', result1)
 		if result1[0] == SAT:
 			return result1
@@ -105,10 +155,12 @@ class Cdcl:
 
 		if level > backtrackLevel:
 			return result1
-		
-		F = self.apply_decisions(decList, F)
-		self.graph = graphCopy
-		return self.cdcl(land(F, lnot(l)), copy.copy(decList), level)
+		F = self.apply_decisions(decList)
+
+		#for clause in F:
+		#	assert clause.id > -1, "WHY HERE GOT ID NEGATIVE"
+
+		return self.cdcl(land(F, lnot(l)), copy.copy(decList), level, G.copy())
 
 	# note that l is a literal, not prop var.
 	def resolve(self, l, F, agenda):
@@ -125,7 +177,9 @@ class Cdcl:
 				if len(newClause.literals) == 1:
 					agenda.append(newClause)
 			else:
-				newF.append(clause)
+				newF.append(copy.deepcopy(clause))
+		#if (ap_literal(l) in ap_formula(newF)):
+		#	set_trace()#, "why isn't it gone?"
 		return newF
 
 	# TODO make this better
@@ -139,54 +193,82 @@ class Cdcl:
 		return p
 
 	# this is called after unit propagation resolution. it updates the inference graph.
-	def update_graph(self, propList, unitClause, level):
-		literal = unpack_unit_clause(unitClause)
-		propVar = ap_literal(literal)
-		if len(propList) == 1:
+	def update_graph(self, G, propList, unitClause, level):
+		literal = unpack_unit_clause(unitClause) # the literal that we just decided
+		propVar = ap_literal(literal)	# the propvar whose value we have just decided
+		if unitClause.id == -1:
 			# unit clause was created as the result of a guess
-			assert unitClause.id == -1
-			self.graph.create_node(int(propVar), not is_neg_literal(literal), level)
+			assert not (int(propVar) in set(G.nodes)), "why's it inside"
+			G.add_node(int(propVar))
+			G.nodes[int(propVar)]["v"] = not is_neg_literal(literal)
+			G.nodes[int(propVar)]["l"] = level
 		else:
 			# unit clause was resolved from a clause that was present in the original F
 			assert unitClause.id >= 0
 			originalClause = copy.deepcopy(self.F[unitClause.id])
 			originalClause.literals.remove(literal)
-			self.graph.create_node(int(propVar), not is_neg_literal(literal), level)
-			self.graph.connect_clause(int(propVar), originalClause)
+			G.add_node(int(propVar))
+			G.nodes[int(propVar)]["v"] = not is_neg_literal(literal)
+			G.nodes[int(propVar)]["l"] = level
+			G.nodes[int(propVar)]["reason"] = unitClause.id
+			for literal in originalClause.literals:
+				parent_node_id = int(ap_literal(literal))
+				child_node_id = int(propVar)
+				G.add_edge(parent_node_id, child_node_id)
+		return G
 
-	def diagnose(self, decList, emptyClauseId, formula):
-		curLevelLits = decList[-1]						# all lits assigned in current level
-		curLevelVars = map(ap_literal, curLevelLits)	# all vars assigned in current level
-		lastIndex = -1
-		learnedClauseInd = emptyClauseId				# partial learned clause
-		learnedClause = self.F[learnedClauseInd]
-		learnedClauseCopy = copy.deepcopy(learnedClause)
-		item = None
-		for item in curLevelVars:
-			pass
-		# conflictNodeId = int(list(curLevelVars)[-1])	# TODO: Buggy line affecting learned clauses.
-		varsWhoseClausesWeveResolved = set()
+	# to avoid confusion all vars are stored as strings (just like in the clauses), unless in the graph.
+	def diagnose_alt(self, G, decList, emptyClauseId, formula):
+		curLevelVars = list(map(ap_literal, decList[-1]))	# all vars assigned in current level
+		theRandomlyAssignedVar = None # in the current lvl, the ONE var that was randomly assigned (can we just assume to be first in curLevelVars?) TODO
+		for v in curLevelVars:
+			v = int(v)
+			if not "reason" in G.nodes[v]:
+				theRandomlyAssignedVar = str(v)
+				break
+		#if theRandomlyAssignedVar == None:
+		#	set_trace()
+		curLevelVars.remove(theRandomlyAssignedVar) # the rest were inferred - don't worry about them.
+		predecessor_set = set()
+
+		for v in curLevelVars:
+			v = int(v)
+			predecessors_of_v = set(G.predecessors(v))
+			predecessor_set = predecessor_set.union(predecessors_of_v)
+
+		predecessor_set = set(map(str, predecessor_set))
+		predecessor_set = predecessor_set.union(set(map(ap_literal, self.F[emptyClauseId].literals)))
+		predecessor_set = predecessor_set - set(curLevelVars)
+		predecessor_set.add(str(theRandomlyAssignedVar))
+
+		learnedClauseLits = []
+		for v in predecessor_set:
+			if G.nodes[int(v)]["v"]:
+				learnedClauseLits.append("-" + str(v))
+			else:
+				learnedClauseLits.append(str(v))
+		#if not (len(predecessor_set) == len(learnedClauseLits)):
+		#	set_trace()
+		#if not (len(set(learnedClauseLits)) == len(learnedClauseLits)):
+		#	set_trace()
+
+		learnedClause = Clause(-2, learnedClauseLits)
+		learnedClause.deb_circumstances = (G.copy(), copy.deepcopy(decList), emptyClauseId, deepcopy(formula))
+		return learnedClause
+
+	def diagnose(self, G, decList, emptyClauseId, formula):
+		learnedClause = copy.deepcopy(self.F[emptyClauseId])
+		curLevelVars = list(map(ap_literal, decList[-1]))	# all vars assigned in current level
+		debug_iterno = 0
+
 		while len(ap_clause(learnedClause) & set(curLevelVars)) > 1:
-			try:
-				nextNodeInd = self.graph.order[lastIndex]
-
-				if (not (nextNodeInd in self.graph.nodes[conflictNodeId].ancestors)):
-					lastIndex -= 1
-					continue
-
-				nextNode = self.graph.nodes[nextNodeInd]
-				varsWhoseClausesWeveResolved.add(nextNode.id)
-
-				# this if-block is an ugly shortcut
-				if len(nextNode.parents) == 0:
-					break
-
-				nextClauseInd = nextNode.parents[0][1]
-				nextClause = self.F[nextClauseInd]
-				lastIndex -= 1
-				learnedClause = self.diagnose_resolve(learnedClause, nextClause)
-			except Exception as e:
-				print(e)
+			debug_iterno += 1
+			nextNodeToResolve = int(curLevelVars.pop())
+			if "reason" not in G.nodes[nextNodeToResolve]: # we got nothing to resolve with if the value was an arbitrary assignment
+				continue
+			nextClauseToResolve = G.nodes[nextNodeToResolve]["reason"]
+			nextClauseToResolve = self.F[nextClauseToResolve]
+			learnedClause = self.diagnose_resolve(learnedClause, nextClauseToResolve)
 		return learnedClause
 
 	# resolution in the context of conflict diagnosis
@@ -200,21 +282,27 @@ class Cdcl:
 				return Clause(-2, newClauseLits)
 		# ideally we never reach this line at all. but something's wrong with the code.
 		# so this is an ugly (but still not incorrect) soln
+		print("NO")
 		return c1
 
 	# call this after backtracking. applies all the decisions we've made so far to the formula
 	# *AND LEMMAS*
-	def apply_decisions(self, decList, F):
-		flatList = flatten(decList)
-		newL = []
-		for clause in self.L:
-			intersectionSize = len(set(flatList).intersection(set(clause.literals)))
-			if intersectionSize != 0:
-				continue	# remove clauses that are already satisfied.
+	def apply_decisions(self, decList):
+		assignments_so_far = flatten(decList)
+		new_F = []
+
+		for clause in self.F:
+			if len(set(assignments_so_far).intersection(set(clause.literals))) > 0:
+				continue # remove clauses that are already satisfied
 			
 			newClause = copy.deepcopy(clause)
-			for lit in newClause.literals:
-				if lnot(lit) in flatList:
+			for lit in clause.literals:
+				if lnot(lit) in assignments_so_far:
 					newClause.literals.remove(lit)
-			newL.append(newClause)
-		return copy.deepcopy(F) + newL
+			new_F.append(newClause)
+		
+		return new_F
+
+	def show_graph(self, G):
+		draw_networkx(G, node_color="#ffdddd")
+		plt.show()

@@ -82,7 +82,7 @@ def contains_empty_clause(F):
 	for clause in F:
 		if (len(clause.literals) == 0):
 			# because of our implementation, non-original clauses should never be found empty.
-			assert (clause.id >= 0), "empty clause wasn't one of the original clauses!"
+			#assert (clause.id >= 0), "empty clause wasn't one of the original clauses!"
 			return True
 	
 	return False
@@ -92,7 +92,7 @@ def find_empty_clause(F):
 	for clause in F:
 		if (len(clause.literals) == 0):
 			# because of our implementation, non-original clauses should never be found empty.
-			assert (clause.id >= 0), "empty clause wasn't one of the original clauses!"
+			#assert (clause.id >= 0), "empty clause wasn't one of the original clauses!"
 			return clause
 
 def exists_unit_clause(F):
@@ -105,6 +105,9 @@ def exists_unit_clause(F):
 
 def find_unit_clause(F):
 	assert is_formula(F), "find_unit_clause assert" + str(F)
+	for clause in F:
+		if clause.id == -1:
+			return clause
 	for clause in F:
 		if (len(clause.literals) == 1):
 			return clause

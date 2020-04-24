@@ -17,29 +17,33 @@ def main():
 		solver = Cdcl(F)
 		result = solver.solve()
 
-
-		if check(F, result, file):
+		check_res = check(F, result, file)
+		if check_res[0]:
 			print(file + " ok")
 		else:
 			perfect = False
-			print(file + " FAIL")
+			print(file + " FAIL " + check_res[1])
 
 	if (perfect):
 		print("==============================\nALL TESTS PASSED\n==============================")
 
 def check(F, result, file):
 	if "uuf" in file:
-		return not result[0]
+		return not result[0], "wrong sat answer"
 
 	if not result[0]:
-		return False
+		return False, "wrong sat answer"
 	
 	tau = set(result[1])
 
+	for lit in tau:
+		if lnot(lit) in tau:
+			return False, "solution has opposing literals"
+
 	for clause in F:
 		if set(clause.literals).intersection(tau) == set():
-			return False
+			return False, "your solution doesn't satisfy the formula"
 		
-	return True
+	return True, None
 
 main()
