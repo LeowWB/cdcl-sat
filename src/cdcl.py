@@ -86,7 +86,7 @@ class Cdcl:
 		return (propList, F, G)
 
 
-	def cdcl(self, F, decList, level, G):
+	def cdcl(self, F, decList, level, G, fit_in = False):
 		#if not cryptosolve(self.F)[0]:
 		#	set_trace()
 
@@ -98,13 +98,24 @@ class Cdcl:
 		
 		assert deb_numneg1 < 2, "why more than 1 neg1"
 		(propList, F, G) = self.unit_prop(F, level, G)
-		decList.append(propList)
+		if not fit_in:
+			decList.append(propList)
+		else:
+			decList[-1] = decList[-1] + propList
+		#print(f'level {level} decList {decList}')
 		if (contains_empty_clause(F)):
+			
+			if level==0:
+				return (UNSAT, None, 0)
+
 			empty_clause = find_empty_clause(F)
+			#print(f'level {level} emptyclauseid {empty_clause.id} emptyclause {self.F[empty_clause.id].literals}')
 			# print('empty_clause: ', empty_clause.id, empty_clause.literals, decList)
 			newLemma = self.diagnose_alt(G, decList, empty_clause.id, F)
+			#set_trace()
 			# print('newLemma: ', newLemma.literals)
 			newLemma.id = len(self.F)
+			#print(f'newlemma {newLemma.literals}')
 
 			lemma_is_trivial = False
 			for lit in newLemma.literals:
@@ -121,15 +132,20 @@ class Cdcl:
 			# we can have multiple "algorithms" for
 			# deciding where to backtrack to. can say in report which is best.
 			#this one takes 2nd biggest number among the levels of the vars in the clause
-			"""biggest = [0,0]
+			if len(newLemma.literals)==1:
+				thislevel=1
+				#print(f'backtrack to this level: {thislevel}')
+				return (UNSAT, None, thislevel)
+
+			biggest = [0,0]
 			for clauseVar in ap_clause(newLemma):
 				curVarLevel = G.nodes[int(clauseVar)]["l"]
 				if curVarLevel > biggest[0]:
 					biggest[1] = biggest[0]
 					biggest[0] = curVarLevel
 				elif curVarLevel > biggest[1]:
-					biggest[1] = curVarLevel"""
-			biggest = [0, 9999]
+					biggest[1] = curVarLevel
+			#print(f'backtrack to this level: {biggest[1]}')
 			return (UNSAT, None, biggest[1])
 		if (is_empty_cnf(F)):
 			return (SAT, decList)
@@ -153,14 +169,11 @@ class Cdcl:
 
 		backtrackLevel = result1[2]
 
-		if level > backtrackLevel:
+		if level > backtrackLevel and backtrackLevel > 0:
 			return result1
+		
 		F = self.apply_decisions(decList)
-
-		#for clause in F:
-		#	assert clause.id > -1, "WHY HERE GOT ID NEGATIVE"
-
-		return self.cdcl(land(F, lnot(l)), copy.copy(decList), level, G.copy())
+		return self.cdcl(F, copy.copy(decList), level-1, G.copy(), True) # TODO probably dunnid copy G agn
 
 	# note that l is a literal, not prop var.
 	def resolve(self, l, F, agenda):
@@ -185,7 +198,7 @@ class Cdcl:
 	# TODO make this better
 	def select_prop_var(self, F):
 		assert is_formula(F), "select_prop_var assert" + str(F)
-		return ap_literal(F[-1].literals[-1])
+		return ap_literal(F[0].literals[0])
 
 	# TODO make this better
 	def select_literal(self, p, F):
