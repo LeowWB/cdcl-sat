@@ -3,7 +3,7 @@ from clause import Clause
 
 def flatten(xs):
 	if (xs == None or len(xs) == 0):
-		return xs
+		return []
 
 	ys = []
 	for x in xs:

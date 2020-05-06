@@ -25,12 +25,15 @@ class Cdcl:
 		self.G = DiGraph()
 		self.flat = flat	# whether we'll flatten output
 		self.L = []			# lemmas that we've learnt
+		self.decisions = [] # decisions we've made that aren't in declist.
 
 	def solve(self):
 		F = copy.deepcopy(self.F)
 		result = self.cdcl(F, [], 0, self.G.copy())
 		if self.flat:
-			return (result[0], flatten(result[1]))
+			return (result[0], flatten(result[1]) + self.decisions)
+		elif result[0]:
+			return (result[0], result[1] + self.decisions)
 		else:
 			return result
 
@@ -54,6 +57,15 @@ class Cdcl:
 	# fit_in - true if this cdcl iter continues another level (rather than starting a new lvl). affects how propList is added to decList.
 	def cdcl(self, F, decList, level, G, fit_in = False):
 		(propList, F, G) = self.unit_prop(F, level, G)
+
+		# if level is 0, we can't backtrack any further. so any inferences we make, we can apply to the actual self.F, so we don't have to keep running apply_decisions
+		if level == 0:
+			self.F = F
+			for i in range(len(self.F)):
+				self.F[i].id = i
+			self.decisions += propList
+			propList = []
+
 		if not fit_in:
 			decList.append(propList)
 		else:
