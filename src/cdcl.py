@@ -82,8 +82,7 @@ class Cdcl:
 
 			# if the new clause is a unit clause, backtrack all the way to the start
 			if len(newLemma.literals)==1:
-				thislevel=1
-				return (UNSAT, None, thislevel)
+				return (UNSAT, None, 1)
 
 			# else, we map each var in the new clause to the level it was assigned, and go to the second-most recent of those levels
 			# rationale: at that point, all but one of the vars will have been assigned. we can then infer the last var.
@@ -100,8 +99,7 @@ class Cdcl:
 			return (SAT, decList)
 		if (all_vars_assigned(F, decList)):
 			return (SAT, decList)
-		p = self.select_prop_var(F)
-		l = self.select_literal(p, F)
+		l = self.select_literal(F)
 
 		result1 = self.cdcl(land(F, l), copy.copy(decList), level+1, G.copy())
 		
@@ -132,14 +130,25 @@ class Cdcl:
 		return newF
 
 	# TODO make this better
-	def select_prop_var(self, F):
-		assert is_formula(F), "select_prop_var assert" + str(F)
-		return ap_literal(F[0].literals[0])
-
-	# TODO make this better
-	def select_literal(self, p, F):
+	def select_literal(self, F):
 		assert is_formula(F), "select_literal assert formula" + str(F)
-		return p
+		occurrences = dict() # occurrences in 2-clauses
+		for clause in F:
+			if len(clause.literals) > 2:
+				continue
+			for lit in clause.literals:
+				if lit in occurrences.keys():
+					occurrences[lit] += 1
+				else:
+					occurrences[lit] = 1
+		max_lit = F[0].literals[0] # default return value
+		max_occ = 0
+		for lit in occurrences.keys():
+			if occurrences[lit] > max_occ:
+				max_occ = occurrences[lit]
+				max_lit = lit
+
+		return max_lit
 
 	# this is called after unit propagation resolution. it updates the inference graph.
 	def update_graph(self, G, propList, unitClause, level):
