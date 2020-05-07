@@ -101,11 +101,16 @@ class Cdcl:
 			return (SAT, decList)
 		l = self.select_literal(F)
 
-		result1 = self.cdcl(land(F, l), copy.copy(decList), level+1, G.copy())
+		result1 = self.cdcl(land(F, l), decList, level+1, G.copy())
 		
 		# first operand: whether the recursive cdcl call has been successful. if successful, can return
 		# second operand: handles backtracking. if our current level is still too high, just return back to prev level.
-		if result1[0] == SAT or level+1 > result1[2] > 0:
+		if result1[0] == SAT:
+			return result1
+
+		decList.pop()
+		
+		if level+1 > result1[2] > 0:
 			return result1
 		
 		F = self.apply_decisions(decList)
