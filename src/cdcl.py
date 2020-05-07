@@ -20,7 +20,6 @@ class Cdcl:
 	def __init__(self, F, flat=True):
 		self.F = copy.deepcopy(F)
 		self.MAX_ID = len(F)
-		self.G = DiGraph()
 		self.flat = flat	# whether we'll flatten output
 		self.L = []			# lemmas that we've learnt
 		self.decisions = [] # decisions we've made that aren't in declist.
@@ -29,7 +28,7 @@ class Cdcl:
 
 	def solve(self):
 		F = copy.deepcopy(self.F)
-		result = self.cdcl(F, [], 0, self.G.copy())
+		result = self.cdcl(F, [], 0, DiGraph())
 		if self.flat:
 			return (result[0], flatten(result[1]) + self.decisions)
 		elif result[0]:
@@ -176,14 +175,16 @@ class Cdcl:
 		else:
 			# unit clause was resolved from a clause that was present in the original F
 			assert unitClause.id >= 0
-			originalClause = copy.deepcopy(self.F[unitClause.id])
-			originalClause.literals.remove(literal)
 			G.add_node(int(propVar))
 			G.nodes[int(propVar)]["v"] = not is_neg_literal(literal)
 			G.nodes[int(propVar)]["l"] = level
 			G.nodes[int(propVar)]["reason"] = unitClause.id
-			for literal in originalClause.literals:
-				parent_node_id = int(ap_literal(literal))
+
+			# loop thru the literals of the original clause, other than the one that became part of the unit clause
+			for original_clause_lit in self.F[unitClause.id].literals:
+				if original_clause_lit == literal:
+					continue
+				parent_node_id = int(ap_literal(original_clause_lit))
 				child_node_id = int(propVar)
 				G.add_edge(parent_node_id, child_node_id)
 		return G
