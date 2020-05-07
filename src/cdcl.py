@@ -1,9 +1,7 @@
 """
 	TODO
-	can probably combine exists_unit_clause with find_unit_clause and save the looping.
 	use profiler to see where time wasted
-	discard tautologies?
-	remove pure literals?
+	discard tautologies? <- if randomly generated formula, can preprocess.
 	ctrl+F for other TODOs
 """
 
@@ -26,6 +24,8 @@ class Cdcl:
 		self.flat = flat	# whether we'll flatten output
 		self.L = []			# lemmas that we've learnt
 		self.decisions = [] # decisions we've made that aren't in declist.
+		self.num_vars = len(ap_formula(F))
+		self.pure_lit_timer = 0 # every so often, we will eradicate all pure literals
 
 	def solve(self):
 		F = copy.deepcopy(self.F)
@@ -109,6 +109,12 @@ class Cdcl:
 			return result1
 		
 		F = self.apply_decisions(decList)
+
+		self.pure_lit_timer += 1
+		if self.pure_lit_timer == 6:
+			self.pure_lit_timer = 0
+			F = self.eradicate_pure_lits(F)
+
 		return self.cdcl(F, decList, level, G, True)
 
 	# note that l is a literal, not prop var.
@@ -226,3 +232,30 @@ class Cdcl:
 			new_F.append(newClause)
 		
 		return new_F
+
+	# identifies pure lits and appends them to the formula as unit clauses, to be removed in the next unitProp
+	def eradicate_pure_lits(self, F):
+		lit_counts = []
+		lit_occurrences = dict()
+
+		for i in range(self.num_vars):
+			lit_counts.append([0,0])
+
+		# count the lits
+		for clause in F:
+			for lit in clause.literals:
+				lit_index = int(ap_literal(lit))-1
+				lit_counts[lit_index][int(is_neg_literal(lit))] += 1
+				if lit in lit_occurrences.keys():
+					lit_occurrences[lit].add(clause.id)
+				else:
+					lit_occurrences[lit] = set([clause.id])
+
+		# identify the pure lits
+		for i in range(self.num_vars):
+			if lit_counts[i][0] == 0 and lit_counts[i][1] > 0:
+				F = land(F, lnot(str(i+1)))
+			elif lit_counts[i][0] > 0 and lit_counts[i][1] == 0:
+				F = land(F, str(i+1))
+		
+		return F
