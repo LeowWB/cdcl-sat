@@ -12,13 +12,14 @@ from copy import deepcopy
 from networkx import DiGraph, draw_networkx
 import matplotlib.pyplot as plt
 from pdb import set_trace
+from form import Form
 
 UNSAT = False
 SAT = True
 
 class Cdcl:
 	def __init__(self, F, flat=True):
-		self.F = copy.deepcopy(F)
+		self.F = F
 		self.MAX_ID = len(F)
 		self.flat = flat	# whether we'll flatten output
 		self.L = []			# lemmas that we've learnt
@@ -36,32 +37,34 @@ class Cdcl:
 		else:
 			return result
 
-	def unit_prop(self, F, level, G):
+	# lit_list is a list of literals that we want to unit-propagate. they will be treated with highest priority.
+	def unit_prop(self, F, level, G, lit_list = None):
 		assert is_formula(F), "unit_prop assert formula" + str(F)
 		propList = [] # vars assigned thru inference
 		agenda = [] #stack. purpose of this is so we explore in a more DFS-like manner
-		while (exists_unit_clause(F) and not contains_empty_clause(F)):
-			if (len(agenda) == 0):
+
+		while (lit_list or (exists_unit_clause(F) and not contains_empty_clause(F))):
+			if lit_list:
+				unitClause = make_singleton_clause(lit_list.pop())
+			elif (len(agenda) == 0):
 				unitClause = find_unit_clause(F)
 			else:
 				unitClause = agenda.pop()
-				if not len(unitClause.literals) == 1:
+				if not len(unitClause) == 1:
 					continue
 			l = unpack_unit_clause(unitClause)
 			propList.append(l)
-			F = self.resolve(l, F, agenda)
+			F = self.resolve(l, F, agenda, level)
 			G = self.update_graph(G, propList, unitClause, level)
 		return (propList, F, G)
 
 	# fit_in - true if this cdcl iter continues another level (rather than starting a new lvl). affects how propList is added to decList.
-	def cdcl(self, F, decList, level, G, fit_in = False):
-		(propList, F, G) = self.unit_prop(F, level, G)
-
-		# if level is 0, we can't backtrack any further. so any inferences we make, we can apply to the actual self.F, so we don't have to keep running apply_decisions
+	# next_prop is a list of literals we want to unit prop the next cycle.
+	def cdcl(self, F, decList, level, G, fit_in = False, next_prop = None):
+		(propList, F, G) = self.unit_prop(F, level, G, lit_list = next_prop)
+		# if level is 0, we can't backtrack any further. so any inferences we make, we can apply to the actual self.F.
 		if level == 0:
-			self.F = F
-			for i in range(len(self.F)):
-				self.F[i].id = i
+			self.F = copy.deepcopy(F)
 			self.decisions += propList
 			propList = []
 
@@ -77,10 +80,18 @@ class Cdcl:
 			empty_clause = find_empty_clause(F)
 			newLemma = self.diagnose(G, decList, empty_clause.id, F)
 			newLemma.id = len(self.F)
-			self.F.append(newLemma)
+			self.F.add_clause(copy.deepcopy(newLemma))
+
+			# updates the newLemma to the current state of decisions
+			F.add_clause(newLemma)
+			for i in range(len(decList)):
+				sublist = decList[i]
+				for sublit in sublist:
+					if lnot(sublit) in newLemma.all_literals():
+						newLemma.remove_literal(lnot(sublit), i)
 
 			# if the new clause is a unit clause, backtrack all the way to the start
-			if len(newLemma.literals)==1:
+			if len(newLemma)==1:
 				return (UNSAT, None, 1)
 
 			# else, we map each var in the new clause to the level it was assigned, and go to the second-most recent of those levels
@@ -99,8 +110,7 @@ class Cdcl:
 		if (all_vars_assigned(F, decList)):
 			return (SAT, decList)
 		l = self.select_literal(F)
-
-		result1 = self.cdcl(land(F, l), decList, level+1, G)
+		result1 = self.cdcl(F, decList, level+1, G, next_prop = [l])
 		
 		if result1[0] == SAT:
 			return result1
@@ -113,47 +123,44 @@ class Cdcl:
 		# back than this level, then we just do so by returning.
 		if level+1 > result1[2] > 0:
 			return result1
-		
-		F = self.apply_decisions(decList)
+			
+		F.reset_to_level(level)
+
+		pure_lits = []
 
 		self.pure_lit_timer += 1
 		if self.pure_lit_timer == 6:
 			self.pure_lit_timer = 0
-			F = self.eradicate_pure_lits(F)
+			F, pure_lits = self.eradicate_pure_lits(F)
 
-		return self.cdcl(F, decList, level, G, True)
+		return self.cdcl(F, decList, level, G, True, pure_lits)
 
 	# note that l is a literal, not prop var.
-	def resolve(self, l, F, agenda):
+	def resolve(self, l, F, agenda, level):
 		assert is_literal(l), "resolve assert literal" + str(l)
 		assert is_formula(F), "resolve assert formula" + str(F)
-		newF = []
-		for clause in F:
-			if l in clause.literals:
-				continue
-			elif lnot(l) in clause.literals:
-				newClause = copy.deepcopy(clause)
-				newClause.literals.remove(lnot(l))
-				newF.append(newClause)
-				if len(newClause.literals) == 1:
-					agenda.append(newClause)
-			else:
-				newF.append(copy.deepcopy(clause))
-		return newF
+		for clause in F.all_clauses():
+			if l in clause.all_literals():
+				F.remove_clause_id(clause.id, level)
+			elif lnot(l) in clause.all_literals():
+				clause.remove_literal(lnot(l), level)
+				if len(clause) == 1:
+					agenda.append(clause)
+		return F
 
 	# TODO make this better
 	def select_literal(self, F):
 		assert is_formula(F), "select_literal assert formula" + str(F)
 		occurrences = dict() # occurrences in 2-clauses
-		for clause in F:
-			if len(clause.literals) > 2:
+		for clause in F.all_clauses():
+			if len(clause) > 2:
 				continue
-			for lit in clause.literals:
+			for lit in clause.all_literals():
 				if lit in occurrences.keys():
 					occurrences[lit] += 1
 				else:
 					occurrences[lit] = 1
-		max_lit = F[0].literals[0] # default return value
+		max_lit = list(F.all_clauses()[0].all_literals())[0] # default return value
 		max_occ = 0
 		for lit in occurrences.keys():
 			if occurrences[lit] > max_occ:
@@ -181,7 +188,7 @@ class Cdcl:
 			G.nodes[int(propVar)]["reason"] = unitClause.id
 
 			# loop thru the literals of the original clause, other than the one that became part of the unit clause
-			for original_clause_lit in self.F[unitClause.id].literals:
+			for original_clause_lit in self.F._clauses[unitClause.id].all_literals():
 				if original_clause_lit == literal:
 					continue
 				parent_node_id = int(ap_literal(original_clause_lit))
@@ -209,7 +216,7 @@ class Cdcl:
 			predecessor_set = predecessor_set.union(predecessors_of_v)
 
 		predecessor_set = set(map(str, predecessor_set))
-		predecessor_set = predecessor_set.union(set(map(ap_literal, self.F[emptyClauseId].literals)))
+		predecessor_set = predecessor_set.union(set(map(ap_literal, self.F._clauses[emptyClauseId].all_literals())))
 		predecessor_set = predecessor_set - set(curLevelVars)
 		predecessor_set.add(str(theRandomlyAssignedVar))
 
@@ -223,24 +230,6 @@ class Cdcl:
 		learnedClause = Clause(-2, learnedClauseLits)
 		return learnedClause
 
-	# call this after backtracking. applies all the decisions we've made so far to the formula
-	# *AND LEMMAS*
-	def apply_decisions(self, decList):
-		assignments_so_far = flatten(decList)
-		new_F = []
-
-		for clause in self.F:
-			if len(set(assignments_so_far).intersection(set(clause.literals))) > 0:
-				continue # remove clauses that are already satisfied
-			
-			newClause = copy.deepcopy(clause)
-			for lit in clause.literals:
-				if lnot(lit) in assignments_so_far:
-					newClause.literals.remove(lit)
-			new_F.append(newClause)
-		
-		return new_F
-
 	# identifies pure lits and appends them to the formula as unit clauses, to be removed in the next unitProp
 	def eradicate_pure_lits(self, F):
 		lit_counts = []
@@ -250,8 +239,8 @@ class Cdcl:
 			lit_counts.append([0,0])
 
 		# count the lits
-		for clause in F:
-			for lit in clause.literals:
+		for clause in F.all_clauses():
+			for lit in clause.all_literals():
 				lit_index = int(ap_literal(lit))-1
 				lit_counts[lit_index][int(is_neg_literal(lit))] += 1
 				if lit in lit_occurrences.keys():
@@ -259,11 +248,17 @@ class Cdcl:
 				else:
 					lit_occurrences[lit] = set([clause.id])
 
+		pure_lit_decisions = []
+
 		# identify the pure lits
 		for i in range(self.num_vars):
 			if lit_counts[i][0] == 0 and lit_counts[i][1] > 0:
-				F = land(F, lnot(str(i+1)))
+				pure_lit_decisions.append(lnot(str(i+1)))
 			elif lit_counts[i][0] > 0 and lit_counts[i][1] == 0:
-				F = land(F, str(i+1))
+				pure_lit_decisions.append(str(i+1))
 		
-		return F
+		return F, pure_lit_decisions
+
+# TODO re3move this
+def deb_print(x):
+	return;print(str(x))

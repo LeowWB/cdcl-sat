@@ -45,8 +45,8 @@ def check(F, result, file):
 		if lnot(lit) in tau:
 			return False, "solution has opposing literals"
 
-	for clause in F:
-		if set(clause.literals).intersection(tau) == set():
+	for clause in F.all_clauses():
+		if clause.all_literals().intersection(tau) == set():
 			return False, "your solution doesn't satisfy the formula"
 		
 	return True, None

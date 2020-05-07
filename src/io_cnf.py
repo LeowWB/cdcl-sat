@@ -7,6 +7,7 @@
 # from string import strip
 import string
 from clause import Clause
+from form import Form
 
 def read_input(file):
 	cnf = []
@@ -26,4 +27,4 @@ def read_input(file):
 		cnf.append(clause)
 		clause_id += 1
 	
-	return cnf
+	return Form(cnf)

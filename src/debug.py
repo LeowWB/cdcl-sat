@@ -43,9 +43,9 @@ def cryptosolve(formula):
 
 def formula_to_cryptosat_clauses(formula):
 	rv = []
-	for c in formula:
+	for c in formula.all_clauses():
 		new_c = []
-		for l in c.literals:
+		for l in c.all_literals():
 			new_c.append(int(l))
 		rv.append(new_c)
 	return rv
