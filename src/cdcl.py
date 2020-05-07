@@ -101,15 +101,17 @@ class Cdcl:
 			return (SAT, decList)
 		l = self.select_literal(F)
 
-		result1 = self.cdcl(land(F, l), decList, level+1, G.copy())
+		result1 = self.cdcl(land(F, l), decList, level+1, G)
 		
-		# first operand: whether the recursive cdcl call has been successful. if successful, can return
-		# second operand: handles backtracking. if our current level is still too high, just return back to prev level.
 		if result1[0] == SAT:
 			return result1
 
-		decList.pop()
+		# since the above if-statement didn't get called, we assume the result was UNSAT.
+		# so we undo the effects of the previous guess, from both G and decList
+		G.remove_nodes_from([int(ap_literal(x)) for x in decList.pop()])
 		
+		# this if-block handles backjumping. if the conflict diagnosis told us to backjump further
+		# back than this level, then we just do so by returning.
 		if level+1 > result1[2] > 0:
 			return result1
 		
