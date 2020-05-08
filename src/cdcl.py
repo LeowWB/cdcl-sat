@@ -27,6 +27,7 @@ class Cdcl:
 		self.num_vars = len(ap_formula(F))
 		self.pure_lit_timer = 0 # every so often, we will eradicate all pure literals
 		self.branch_count = 0 # calls to select_literal
+		self.lemma_count = 0
 
 	def solve(self):
 		F = copy.deepcopy(self.F)
@@ -80,6 +81,7 @@ class Cdcl:
 
 			empty_clause = find_empty_clause(F)
 			new_lemma = self.diagnose(G, dec_list, empty_clause.id, F)
+			self.lemma_count += 1
 			self.F.add_clause(copy.deepcopy(new_lemma))
 
 			# updates the new_lemma to the current state of decisions
