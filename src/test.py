@@ -11,6 +11,7 @@ def main():
 	count = 0
 	perfect = True
 	very_start = time()
+	total_branches = 0
 
 	for file in listdir(TEST_DIR):
 		start = time()
@@ -19,18 +20,22 @@ def main():
 
 		solver = Cdcl(F)
 		result = solver.solve()
+		total_branches += result[2]
 
 		check_res = check(F, result, file)
 		if check_res[0]:
 			print(file + "\tok\t", end='')
-			print("%3f" % (time() - start))
+			print("%.3f" % (time() - start), end='')
+			print(f'\t{result[2]}')
 		else:
 			perfect = False
 			print(file + " FAIL " + check_res[1])
 
 	if (perfect):
 		print("==============================\nALL TESTS PASSED\n==============================")
-		print(f'count: {count}; time: {time() - very_start}')
+		print(f'count: {count}; time: ', end='')
+		print("%.3f" % (time() - very_start), end='')
+		print(f'; branches: {total_branches}')
 
 def check(F, result, file):
 	if "uuf" in file:

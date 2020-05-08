@@ -26,16 +26,17 @@ class Cdcl:
 		self.decisions = [] # decisions we've made that aren't in dec_list.
 		self.num_vars = len(ap_formula(F))
 		self.pure_lit_timer = 0 # every so often, we will eradicate all pure literals
+		self.branch_count = 0 # calls to select_literal
 
 	def solve(self):
 		F = copy.deepcopy(self.F)
 		result = self.cdcl(F, [], 0, DiGraph())
 		if self.flat:
-			return (result[0], flatten(result[1]) + self.decisions)
+			return (result[0], flatten(result[1]) + self.decisions, self.branch_count)
 		elif result[0]:
-			return (result[0], result[1] + self.decisions)
+			return (result[0], result[1] + self.decisions, self.branch_count)
 		else:
-			return result
+			return (result[0], result[1], self.branch_count)
 
 	# lit_list is a list of literals that we want to unit-propagate. they will be treated with highest priority.
 	def unit_prop(self, F, level, G, lit_list = None):
@@ -127,8 +128,10 @@ class Cdcl:
 		return F
 
 	# TODO make this better
+	# pick branching literal
 	def select_literal(self, F):
 		assert is_formula(F), "select_literal assert formula" + str(F)
+		self.branch_count += 1
 		occurrences = dict() # occurrences in 2-clauses
 		for clause in F.all_clauses():
 			if len(clause) > 2:
