@@ -66,10 +66,6 @@ def is_empty_cnf(F):
 	assert is_formula(F), "is_empty_cnf assert" + str(F)
 	return len(F) == 0
 
-def all_vars_assigned(F, decList):
-	assert is_formula(F), "all_vars_assigned assert" + str(F)
-	return ap_formula(F) == set(map(ap_literal, flatten(decList)))
-
 def contains_empty_clause(F):
 	assert is_formula(F), "contains_empty_clause assert" + str(F)
 	for clause in F.all_clauses():

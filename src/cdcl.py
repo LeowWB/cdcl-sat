@@ -79,7 +79,6 @@ class Cdcl:
 
 			empty_clause = find_empty_clause(F)
 			newLemma = self.diagnose(G, decList, empty_clause.id, F)
-			newLemma.id = len(self.F)
 			self.F.add_clause(copy.deepcopy(newLemma))
 
 			# updates the newLemma to the current state of decisions
@@ -106,8 +105,6 @@ class Cdcl:
 					biggest[1] = curVarLevel
 			return (UNSAT, None, biggest[1])
 		if (is_empty_cnf(F)):
-			return (SAT, decList)
-		if (all_vars_assigned(F, decList)):
 			return (SAT, decList)
 		l = self.select_literal(F)
 		result1 = self.cdcl(F, decList, level+1, G, next_prop = [l])
@@ -160,7 +157,7 @@ class Cdcl:
 					occurrences[lit] += 1
 				else:
 					occurrences[lit] = 1
-		max_lit = list(F.all_clauses()[0].all_literals())[0] # default return value
+		max_lit = F.last_lit()
 		max_occ = 0
 		for lit in occurrences.keys():
 			if occurrences[lit] > max_occ:
