@@ -33,7 +33,7 @@ class Clause:
 				self.length += 1
 	
 	def __str__(self):
-		return str(self._literals)
+		return str(self._literals.keys())
 	
 	def __repr__(self):
 		return str(self._literals.keys())

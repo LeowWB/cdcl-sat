@@ -9,7 +9,7 @@ from util import *
 from debug import *
 from graph import Graph
 from copy import deepcopy
-from networkx import DiGraph, draw_networkx, ancestors, descendants, shortest_path_length, all_simple_paths
+from networkx import DiGraph, draw_networkx, ancestors, descendants, shortest_path_length, all_simple_paths, has_path
 import matplotlib.pyplot as plt
 from pdb import set_trace
 from form import Form
@@ -30,6 +30,7 @@ class Cdcl:
 		self.forget_timer = 0
 		self.branch_count = 0 # calls to select_literal
 		self.lemma_count = 0
+		self.dec_vars = [] # decided vars
 
 	def solve(self):
 		F = copy.deepcopy(self.F)
@@ -98,6 +99,7 @@ class Cdcl:
 		if (is_empty_cnf(F)):
 			return (SAT, dec_list)
 		l = self.select_literal(F)
+		self.dec_vars.append(int(ap_literal(l)))
 		result1 = self.cdcl(F, dec_list, level+1, G, next_prop = [l])
 		
 		if result1[0] == SAT:
@@ -106,6 +108,7 @@ class Cdcl:
 		# since the above if-statement didn't get called, we assume the result was UNSAT.
 		# so we undo the effects of the previous guess, from both G and dec_list
 		G.remove_nodes_from([int(ap_literal(x)) for x in dec_list.pop()])
+		self.dec_vars.pop()
 		
 		# this if-block handles backjumping. if the conflict diagnosis told us to backjump further
 		# back than this level, then we just do so by returning.
@@ -188,41 +191,50 @@ class Cdcl:
 				G.add_edge(parent_node_id, child_node_id)
 		return G
 
-	
 	# to avoid confusion all vars are stored as strings (just like in the clauses), unless in the graph.
 	def diagnose(self, G, dec_list, emptyClauseId, formula, level):
-		curLevelVars = list(map(ap_literal, dec_list[-1]))	# all vars assigned in current level
-		theRandomlyAssignedVar = None # in the current lvl, the ONE var that was randomly assigned (can we just assume to be first in curLevelVars?) TODO
-		for v in curLevelVars:
-			v = int(v)
-			if not "reason" in G.nodes[v]:
-				theRandomlyAssignedVar = str(v)
-				break
-		#if theRandomlyAssignedVar == None:
-		#	set_trace()
-		curLevelVars.remove(theRandomlyAssignedVar) # the rest were inferred - don't worry about them.
-		predecessor_set = set()
+		cur_lvl_vars = list(map(ap_literal, dec_list[-1]))	# all vars assigned in current level
+		cur_dec_var = cur_lvl_vars[0] # the decision variable of the current level
 
-		for v in curLevelVars:
-			v = int(v)
-			predecessors_of_v = set(G.predecessors(v))
-			predecessor_set = predecessor_set.union(predecessors_of_v)
+		# list of nodes (int type) that immediately precede the conflict
+		imm_predecessors_of_conflict = set(
+			map(
+				lambda x: int(ap_literal(x)),
+				self.F._clauses[emptyClauseId].all_literals()
+			)
+		)
+		
+		# conflict node
+		G.add_node(-999)
+		for pr in imm_predecessors_of_conflict:
+			G.add_edge(pr, -999)
 
-		predecessor_set = set(map(str, predecessor_set))
-		predecessor_set = predecessor_set.union(set(map(ap_literal, self.F._clauses[emptyClauseId].all_literals())))
-		predecessor_set = predecessor_set - set(curLevelVars)
-		predecessor_set.add(str(theRandomlyAssignedVar))
+		all_paths = all_simple_paths(G, int(cur_dec_var), -999)
+		
+		uips = set()
+
+		for path in all_paths:
+			if len(uips) > 0:
+				uips = uips.intersection(set(path))
+			else:
+				uips = set(path)
+
+		uips.remove(-999)
+		f_uip = min(uips, key=lambda n: shortest_path_length(G, n, -999)) #1-uip
+		
+		a_set = set(filter(lambda n: has_path(G, n, -999), self.dec_vars))
+		a_set.add(f_uip)
 
 		learnedClauseLits = []
-		for v in predecessor_set:
+		for v in a_set:
 			if G.nodes[int(v)]["v"]:
 				learnedClauseLits.append("-" + str(v))
 			else:
 				learnedClauseLits.append(str(v))
 
 		learnedClause = Clause(-2, learnedClauseLits)
+		G.remove_node(-999)
 		return learnedClause
-
 
 	# identifies pure lits and appends them to the formula as unit clauses, to be removed in the next unitProp
 	def eradicate_pure_lits(self, F):
