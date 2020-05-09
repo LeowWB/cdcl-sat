@@ -14,11 +14,14 @@ from pdb import *
 
 def main():
 	
-	F = read_input("test/20/uf20-03.cnf")
+	F = read_input("test/simple/einstein.cnf")
 	# print('Clauses input: ')
 	# print_formula(F)
 	cdcl = Cdcl(F, False)
 	result = cdcl.solve()
 	print(result)
+
+	for elem in final_dec_set_to_bool_arr(flatten(result[1]), cdcl.num_vars):
+		print(elem)
 
 main()

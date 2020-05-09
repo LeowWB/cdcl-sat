@@ -103,3 +103,13 @@ def find_unit_clause(F):
 	
 	return None
 	
+def final_dec_set_to_bool_arr(dec, num_vars):
+	rv = []
+	for i in range(1,num_vars+1):
+		if str(i) in dec:
+			rv.append((i,True))
+		elif '-' + str(i) in dec:
+			rv.append((i,False))
+		else:
+			rv.append((i,False))
+	return rv
