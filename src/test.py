@@ -5,7 +5,7 @@ from os import listdir
 from debug import *
 from time import time
 
-TEST_DIR = "test/test/"
+TEST_DIR = "test/wait/"
 
 def main():
 	count = 0

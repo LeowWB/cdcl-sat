@@ -9,10 +9,11 @@ from util import *
 from debug import *
 from graph import Graph
 from copy import deepcopy
-from networkx import DiGraph, draw_networkx
+from networkx import DiGraph, draw_networkx, ancestors, descendants, shortest_path_length, all_simple_paths
 import matplotlib.pyplot as plt
 from pdb import set_trace
 from form import Form
+from collections import deque
 
 UNSAT = False
 SAT = True
@@ -85,14 +86,15 @@ class Cdcl:
 				return (UNSAT, None, 0) # empty clause at level 0 implies we've derived two directly contradictory clauses thru resolution
 
 			empty_clause = find_empty_clause(F)
-			new_lemma = self.diagnose(G, dec_list, empty_clause.id, F)
+			new_lemma = self.diagnose(G, dec_list, empty_clause.id, F, level)
 			self.lemma_count += 1
-			self.F.add_clause(copy.deepcopy(new_lemma))
+			nl_copy = copy.deepcopy(new_lemma)
+			self.F.add_clause(nl_copy)
 
 			# updates the new_lemma to the current state of decisions
 			F.add_clause(new_lemma)
 			self.update_clause(new_lemma, dec_list)
-			return (UNSAT, None, self.decide_backjump_level(new_lemma))
+			return (UNSAT, None, self.decide_backjump_level(nl_copy, G))
 		if (is_empty_cnf(F)):
 			return (SAT, dec_list)
 		l = self.select_literal(F)
@@ -186,8 +188,9 @@ class Cdcl:
 				G.add_edge(parent_node_id, child_node_id)
 		return G
 
+	
 	# to avoid confusion all vars are stored as strings (just like in the clauses), unless in the graph.
-	def diagnose(self, G, dec_list, emptyClauseId, formula):
+	def diagnose(self, G, dec_list, emptyClauseId, formula, level):
 		curLevelVars = list(map(ap_literal, dec_list[-1]))	# all vars assigned in current level
 		theRandomlyAssignedVar = None # in the current lvl, the ONE var that was randomly assigned (can we just assume to be first in curLevelVars?) TODO
 		for v in curLevelVars:
@@ -219,6 +222,7 @@ class Cdcl:
 
 		learnedClause = Clause(-2, learnedClauseLits)
 		return learnedClause
+
 
 	# identifies pure lits and appends them to the formula as unit clauses, to be removed in the next unitProp
 	def eradicate_pure_lits(self, F):
@@ -257,10 +261,10 @@ class Cdcl:
 				if lnot(sublit) in clause.all_literals():
 					clause.remove_literal(lnot(sublit), i)
 
-	def decide_backjump_level(self, new_lemma):
+	def decide_backjump_level(self, new_lemma, G):
 		# if the new clause is a unit clause, backtrack all the way to the start
 		if len(new_lemma)==1:
-			return (UNSAT, None, 1)
+			return 1 #(UNSAT, None, 1)
 		# else, we map each var in the new clause to the level it was assigned, and go to the second-most recent of those levels
 		# rationale: at that point, all but one of the vars will have been assigned. we can then infer the last var.
 		biggest = [0,0]

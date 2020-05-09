@@ -14,7 +14,7 @@ from pdb import *
 
 def main():
 	
-	F = read_input("test/simple/simple3.cnf")
+	F = read_input("test/simple/simple2.cnf")
 	# print('Clauses input: ')
 	# print_formula(F)
 	cdcl = Cdcl(F, False)
