@@ -17,6 +17,15 @@ class Form():
             )
         )
     
+    def all_clauses_backwards(self):
+        return map(
+            lambda i: self._clauses[i],
+            filter(
+                lambda i: self._when_removed[i] == -1,
+                reversed(range(len(self._clauses)))
+            )
+        )
+    
     def add_clause(self, c):
         c.id = len(self._clauses)
         self._clauses.append(c)
@@ -55,9 +64,28 @@ class Form():
             return None
 
     def permanently_forget_clauses(self, max_id, lem_count):
-        if lem_count < 10:
+        
+        
+        
+        # TODO
+        #return
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        if lem_count < 20:
             return
-        for i in range(max_id, self._length-9):
+        for i in range(max_id, self._length-19):
             if self._when_removed[i] == -1 and len(self._clauses[i]) > 4:
                 self.remove_clause_id(i, -99)
                 self._marked.add(i)

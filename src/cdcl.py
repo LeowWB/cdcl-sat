@@ -3,8 +3,10 @@
 	use profiler to see where time wasted
 	discard tautologies? <- if randomly generated formula, can preprocess.
 	ctrl+F for other TODOs
+	if i took out forgetting altgt du u think it'd be faster on unsat.
 """
 
+import sys
 from util import *
 from debug import *
 from graph import Graph
@@ -13,7 +15,7 @@ from networkx import DiGraph, draw_networkx, ancestors, descendants, shortest_pa
 import matplotlib.pyplot as plt
 from pdb import set_trace
 from form import Form
-from collections import deque
+from random import random
 
 UNSAT = False
 SAT = True
@@ -31,6 +33,9 @@ class Cdcl:
 		self.branch_count = 0 # calls to select_literal
 		self.lemma_count = 0
 		self.dec_vars = [] # decided vars
+		self.lemmas_since_zero = 0
+
+		sys.setrecursionlimit(10**6) # the last return in the cdcl() function is tail-recursive, but python doesn't have optimization.
 
 	def solve(self):
 		F = copy.deepcopy(self.F)
@@ -69,6 +74,7 @@ class Cdcl:
 		(prop_list, F, G) = self.unit_prop(F, level, G, lit_list = next_prop)
 		# if level is 0, we can't backtrack any further. so any inferences we make, we can apply to the actual self.F.
 		if level == 0:
+			self.lemmas_since_zero = 0
 			self.forget_timer += 1
 			if self.forget_timer >= 2:
 				F.permanently_forget_clauses(self.MAX_ID, self.lemma_count)
@@ -88,6 +94,7 @@ class Cdcl:
 
 			empty_clause = find_empty_clause(F)
 			new_lemma = self.diagnose(G, dec_list, empty_clause.id, F, level)
+			self.lemmas_since_zero += 1
 			self.lemma_count += 1
 			nl_copy = copy.deepcopy(new_lemma)
 			self.F.add_clause(nl_copy)
@@ -139,7 +146,6 @@ class Cdcl:
 					agenda.append(clause)
 		return F
 
-	# TODO make this better
 	# pick branching literal
 	def select_literal(self, F):
 		assert is_formula(F), "select_literal assert formula" + str(F)
@@ -153,14 +159,22 @@ class Cdcl:
 					occurrences[lit] += 1
 				else:
 					occurrences[lit] = 1
-		max_lit = F.last_lit()
+		max_lit = set([F.last_lit()])
 		max_occ = 0
 		for lit in occurrences.keys():
 			if occurrences[lit] > max_occ:
 				max_occ = occurrences[lit]
-				max_lit = lit
-
-		return max_lit
+				max_lit = set([lit])
+			elif occurrences[lit] == max_occ:
+				max_lit.add(lit)
+		
+		if len(max_lit) > 1:
+			for c in F.all_clauses_backwards():
+				inters = c.all_literals().intersection(max_lit)
+				if len(inters) > 0:
+					return list(inters)[0]
+		
+		return list(max_lit)[0]
 
 	# this is called after unit propagation resolution. it updates the inference graph.
 	def update_graph(self, G, prop_list, unit_clause, level):
@@ -277,6 +291,11 @@ class Cdcl:
 		# if the new clause is a unit clause, backtrack all the way to the start
 		if len(new_lemma)==1:
 			return 1 #(UNSAT, None, 1)
+
+		if self.lemmas_since_zero > 10:
+			if random() > 0.9:
+				return 1
+
 		# else, we map each var in the new clause to the level it was assigned, and go to the second-most recent of those levels
 		# rationale: at that point, all but one of the vars will have been assigned. we can then infer the last var.
 		biggest = [0,0]
