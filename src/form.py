@@ -34,7 +34,8 @@ class Form():
             if self._when_removed[i] > level:
                 self._when_removed[i] = -1
                 self._length += 1
-            self._clauses[i].reset_to_level(level)
+            if self._when_removed[i] == -1:
+                self._clauses[i].reset_to_level(level)
     
     def __str__(self):
         return str(self.all_clauses())
@@ -49,3 +50,10 @@ class Form():
             return list(clause.all_literals())[-1]
         else:
             return None
+
+    def permanently_forget_clauses(self, max_id, lem_count):
+        if lem_count < 10:
+            return
+        for i in range(max_id, self._length-9):
+            if self._when_removed[i] == -1 and len(self._clauses[i]) > 4:
+                self.remove_clause_id(i, -99)

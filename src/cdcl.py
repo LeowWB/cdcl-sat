@@ -26,6 +26,7 @@ class Cdcl:
 		self.decisions = [] # decisions we've made that aren't in dec_list.
 		self.num_vars = len(ap_formula(F))
 		self.pure_lit_timer = 0 # every so often, we will eradicate all pure literals
+		self.forget_timer = 0
 		self.branch_count = 0 # calls to select_literal
 		self.lemma_count = 0
 
@@ -66,6 +67,10 @@ class Cdcl:
 		(prop_list, F, G) = self.unit_prop(F, level, G, lit_list = next_prop)
 		# if level is 0, we can't backtrack any further. so any inferences we make, we can apply to the actual self.F.
 		if level == 0:
+			self.forget_timer += 1
+			if self.forget_timer >= 2:
+				F.permanently_forget_clauses(self.MAX_ID, self.lemma_count)
+				self.forget_timer = 0
 			self.F = copy.deepcopy(F)
 			self.decisions += prop_list
 			prop_list = []
@@ -156,7 +161,7 @@ class Cdcl:
 	def update_graph(self, G, prop_list, unit_clause, level):
 		literal = unpack_unit_clause(unit_clause) # the literal that we just decided
 		propVar = ap_literal(literal)	# the propvar whose value we have just decided
-		if unit_clause.id == -1:
+		if unit_clause.id == -1 or level == 0:
 			# unit clause was created as the result of a guess
 			assert not (int(propVar) in set(G.nodes)), "why's it inside"
 			G.add_node(int(propVar))
