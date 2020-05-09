@@ -70,18 +70,13 @@ def contains_empty_clause(F):
 	assert is_formula(F), "contains_empty_clause assert" + str(F)
 	for clause in F.all_clauses():
 		if (len(clause) == 0):
-			# because of our implementation, non-original clauses should never be found empty.
-			#assert (clause.id >= 0), "empty clause wasn't one of the original clauses!"
 			return True
-	
 	return False
 
 def find_empty_clause(F):
 	assert is_formula(F), "find_empty_clause assert" + str(F)
 	for clause in F.all_clauses():
 		if (len(clause) == 0):
-			# because of our implementation, non-original clauses should never be found empty.
-			#assert (clause.id >= 0), "empty clause wasn't one of the original clauses!"
 			return clause
 
 def exists_unit_clause(F):
@@ -100,9 +95,9 @@ def find_unit_clause(F):
 	for clause in F.all_clauses():
 		if (len(clause) == 1):
 			return clause
-	
 	return None
-	
+
+# to convert the output to a human-readable array
 def final_dec_set_to_bool_arr(dec, num_vars):
 	rv = []
 	for i in range(1,num_vars+1):

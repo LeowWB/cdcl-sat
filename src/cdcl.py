@@ -1,21 +1,9 @@
-"""
-	TODO
-	use profiler to see where time wasted
-	discard tautologies? <- if randomly generated formula, can preprocess.
-	ctrl+F for other TODOs
-	if i took out forgetting altgt du u think it'd be faster on unsat.
-"""
-
-import sys
-from util import *
-from debug import *
-from graph import Graph
 from copy import deepcopy
-from networkx import DiGraph, draw_networkx, ancestors, descendants, shortest_path_length, all_simple_paths, has_path
-import matplotlib.pyplot as plt
-from pdb import set_trace
 from form import Form
+from networkx import DiGraph, ancestors, descendants, shortest_path_length, all_simple_paths, has_path
 from random import random
+from sys import setrecursionlimit
+from util import *
 
 UNSAT = False
 SAT = True
@@ -35,7 +23,7 @@ class Cdcl:
 		self.dec_vars = [] # decided vars
 		self.lemmas_since_zero = 0
 
-		sys.setrecursionlimit(10**6) # the last return in the cdcl() function is tail-recursive, but python doesn't have optimization.
+		setrecursionlimit(10**6) # the last return in the cdcl() function is tail-recursive, but python doesn't have optimization.
 
 	def solve(self):
 		F = copy.deepcopy(self.F)
@@ -49,7 +37,6 @@ class Cdcl:
 
 	# lit_list is a list of literals that we want to unit-propagate. they will be treated with highest priority.
 	def unit_prop(self, F, level, G, lit_list = None):
-		assert is_formula(F), "unit_prop assert formula" + str(F)
 		prop_list = [] # vars assigned thru inference
 		agenda = [] #stack. purpose of this is so we explore in a more DFS-like manner
 
@@ -135,8 +122,6 @@ class Cdcl:
 
 	# note that l is a literal, not prop var.
 	def resolve(self, l, F, agenda, level):
-		assert is_literal(l), "resolve assert literal" + str(l)
-		assert is_formula(F), "resolve assert formula" + str(F)
 		for clause in F.all_clauses():
 			if l in clause.all_literals():
 				F.remove_clause_id(clause.id, level)
@@ -148,7 +133,6 @@ class Cdcl:
 
 	# pick branching literal
 	def select_literal(self, F):
-		assert is_formula(F), "select_literal assert formula" + str(F)
 		self.branch_count += 1
 		occurrences = dict() # occurrences in 2-clauses
 		for clause in F.all_clauses():
@@ -159,6 +143,8 @@ class Cdcl:
 					occurrences[lit] += 1
 				else:
 					occurrences[lit] = 1
+
+		# maximal occurrence literals
 		max_lit = set([F.last_lit()])
 		max_occ = 0
 		for lit in occurrences.keys():
@@ -168,6 +154,7 @@ class Cdcl:
 			elif occurrences[lit] == max_occ:
 				max_lit.add(lit)
 		
+		# resolve ties by picking lit that appears near to the back of the formula
 		if len(max_lit) > 1:
 			for c in F.all_clauses_backwards():
 				inters = c.all_literals().intersection(max_lit)
@@ -181,32 +168,30 @@ class Cdcl:
 		if level == 0:
 			return G
 		literal = unpack_unit_clause(unit_clause) # the literal that we just decided
-		propVar = ap_literal(literal)	# the propvar whose value we have just decided
+		prop_var = ap_literal(literal)	# the prop_var whose value we have just decided
 		if unit_clause.id == -1:
 			# unit clause was created as the result of a guess
-			assert not (int(propVar) in set(G.nodes)), "why's it inside"
-			G.add_node(int(propVar))
-			G.nodes[int(propVar)]["v"] = not is_neg_literal(literal)
-			G.nodes[int(propVar)]["l"] = level
+			G.add_node(int(prop_var))
+			G.nodes[int(prop_var)]["v"] = not is_neg_literal(literal)
+			G.nodes[int(prop_var)]["l"] = level
 		else:
 			# unit clause was resolved from a clause that was present in the original F
-			assert unit_clause.id >= 0
-			G.add_node(int(propVar))
-			G.nodes[int(propVar)]["v"] = not is_neg_literal(literal)
-			G.nodes[int(propVar)]["l"] = level
-			G.nodes[int(propVar)]["reason"] = unit_clause.id
+			G.add_node(int(prop_var))
+			G.nodes[int(prop_var)]["v"] = not is_neg_literal(literal)
+			G.nodes[int(prop_var)]["l"] = level
+			G.nodes[int(prop_var)]["reason"] = unit_clause.id
 
 			# loop thru the literals of the original clause, other than the one that became part of the unit clause
 			for original_clause_lit in self.F._clauses[unit_clause.id].all_literals():
 				if original_clause_lit == literal or original_clause_lit in self.decisions:
 					continue
 				parent_node_id = int(ap_literal(original_clause_lit))
-				child_node_id = int(propVar)
+				child_node_id = int(prop_var)
 				G.add_edge(parent_node_id, child_node_id)
 		return G
 
 	# to avoid confusion all vars are stored as strings (just like in the clauses), unless in the graph.
-	def diagnose(self, G, dec_list, emptyClauseId, formula, level):
+	def diagnose(self, G, dec_list, empty_clause_id, formula, level):
 		cur_lvl_vars = list(map(ap_literal, dec_list[-1]))	# all vars assigned in current level
 		cur_dec_var = cur_lvl_vars[0] # the decision variable of the current level
 
@@ -214,7 +199,7 @@ class Cdcl:
 		imm_predecessors_of_conflict = set(
 			map(
 				lambda x: int(ap_literal(x)),
-				self.F._clauses[emptyClauseId].all_literals()
+				self.F._clauses[empty_clause_id].all_literals()
 			)
 		)
 		
@@ -307,7 +292,3 @@ class Cdcl:
 			elif cur_var_level > biggest[1]:
 				biggest[1] = cur_var_level
 		return biggest[1]
-
-# TODO re3move this
-def deb_print(x):
-	return;print(str(x))

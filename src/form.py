@@ -64,25 +64,6 @@ class Form():
             return None
 
     def permanently_forget_clauses(self, max_id, lem_count):
-        
-        
-        
-        # TODO
-        #return
-
-
-
-
-
-
-
-
-
-
-
-
-
-
         if lem_count < 20:
             return
         for i in range(max_id, self._length-19):
