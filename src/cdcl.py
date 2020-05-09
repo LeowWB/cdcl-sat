@@ -159,9 +159,11 @@ class Cdcl:
 
 	# this is called after unit propagation resolution. it updates the inference graph.
 	def update_graph(self, G, prop_list, unit_clause, level):
+		if level == 0:
+			return G
 		literal = unpack_unit_clause(unit_clause) # the literal that we just decided
 		propVar = ap_literal(literal)	# the propvar whose value we have just decided
-		if unit_clause.id == -1 or level == 0:
+		if unit_clause.id == -1:
 			# unit clause was created as the result of a guess
 			assert not (int(propVar) in set(G.nodes)), "why's it inside"
 			G.add_node(int(propVar))
@@ -177,7 +179,7 @@ class Cdcl:
 
 			# loop thru the literals of the original clause, other than the one that became part of the unit clause
 			for original_clause_lit in self.F._clauses[unit_clause.id].all_literals():
-				if original_clause_lit == literal:
+				if original_clause_lit == literal or original_clause_lit in self.decisions:
 					continue
 				parent_node_id = int(ap_literal(original_clause_lit))
 				child_node_id = int(propVar)

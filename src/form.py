@@ -6,6 +6,7 @@ class Form():
         self._clauses = clauses
         self._when_removed = [-1 for x in clauses]
         self._length = len(clauses)
+        self._marked = set()
 
     def all_clauses(self):
         return map(
@@ -28,6 +29,8 @@ class Form():
     def remove_clause_id(self, id, level):
         self._when_removed[id] = level
         self._length -= 1
+        if level == 0:
+            self._marked.add(id)
     
     def reset_to_level(self, level):
         for i in range(len(self._clauses)):
@@ -57,3 +60,10 @@ class Form():
         for i in range(max_id, self._length-9):
             if self._when_removed[i] == -1 and len(self._clauses[i]) > 4:
                 self.remove_clause_id(i, -99)
+                self._marked.add(i)
+        if len(self._marked) > 0:
+            self._clauses = [self._clauses[i] for i in range(len(self._clauses)) if not i in self._marked]
+            self._when_removed = [self._when_removed[i] for i in range(len(self._when_removed)) if not i in self._marked]
+            for i in range(len(self._clauses)):
+                self._clauses[i].id = i
+            self._marked = set()
